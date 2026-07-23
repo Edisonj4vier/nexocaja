@@ -18,10 +18,10 @@ export class ResponseInterceptor<T> implements NestInterceptor<
     next: CallHandler,
   ): Observable<ApiResponse<T>> {
     return next.handle().pipe(
-      map((data) => ({
+      map((data: unknown) => ({
         success: true,
         message: 'Operación realizada correctamente.',
-        data,
+        data: data as T,
         timestamp: new Date().toISOString(),
       })),
     );

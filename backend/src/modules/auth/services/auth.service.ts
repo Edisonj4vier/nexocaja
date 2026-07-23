@@ -13,7 +13,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   private async validateUser(loginDto: LoginDto) {
     const user = await this.prisma.user.findUnique({

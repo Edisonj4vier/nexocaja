@@ -14,6 +14,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('secret'),
         signOptions: {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           expiresIn: config.get<string>('expiresIn') as any,
         },
       }),
@@ -23,4 +24,4 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   providers: [AuthService, JwtStrategy],
   exports: [JwtModule],
 })
-export class AuthModule { }
+export class AuthModule {}

@@ -37,7 +37,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(configService.get<number>('port') ?? 3000);
-  await prismaService.enableShutdownHooks(app);
+  prismaService.enableShutdownHooks(app);
 }
 
-bootstrap();
+void bootstrap();
