@@ -50,3 +50,26 @@ model User {
   @@index([roleId])
   @@map("users")
 }
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Client {
+  id                   String       @id @default(uuid())
+  identificationType   String       @map("identification_type")
+  identificationNumber String       @unique @map("identification_number")
+  firstName            String       @map("first_name")
+  lastName             String       @map("last_name")
+  phone                String?
+  email                String?
+  address              String?
+  birthDate            DateTime?    @map("birth_date")
+  status               ClientStatus @default(ACTIVE)
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+
+  @@index([identificationNumber])
+  @@map("clients")
+}
