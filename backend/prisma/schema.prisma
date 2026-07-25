@@ -70,6 +70,29 @@ model Client {
   createdAt            DateTime     @default(now()) @map("created_at")
   updatedAt            DateTime     @updatedAt @map("updated_at")
 
+  accounts             Account[]
+
   @@index([identificationNumber])
   @@map("clients")
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Account {
+  id            String        @id @default(uuid())
+  accountNumber String        @unique @map("account_number")
+  clientId      String        @map("client_id")
+  client        Client        @relation(fields: [clientId], references: [id])
+  balance       Decimal       @default(0) @db.Decimal(12, 2)
+  status        AccountStatus @default(ACTIVE)
+  openedAt      DateTime      @default(now()) @map("opened_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  @@index([clientId])
+  @@index([accountNumber])
+  @@map("accounts")
 }
