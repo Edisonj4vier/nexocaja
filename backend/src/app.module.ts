@@ -5,6 +5,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
+import { CashRegistersModule } from './modules/cash-registers/cash-registers.module';
+import { MovementsModule } from './modules/movements/movements.module';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
 @Module({
@@ -21,6 +23,8 @@ import { validationSchema } from './config/validation';
     UsersModule,
     ClientsModule,
     AccountsModule,
+    CashRegistersModule,
+    MovementsModule,
   ],
 })
 export class AppModule {}
