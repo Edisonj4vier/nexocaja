@@ -1,11 +1,10 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
 import { LogOut, Home, Users, Wallet, Landmark, ArrowRightLeft, FileText } from 'lucide-react';
 
 export default function MainLayout() {
   const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
@@ -30,13 +29,20 @@ export default function MainLayout() {
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => (
-            <button
+            <NavLink
               key={item.name}
-              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100"
+              to={item.path}
+              className={({ isActive }) =>
+                `w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  isActive
+                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'
+                }`
+              }
             >
               <item.icon className="w-5 h-5" />
               {item.name}
-            </button>
+            </NavLink>
           ))}
         </nav>
       </aside>

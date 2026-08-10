@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/features/auth/LoginPage';
 import DashboardPage from '@/features/dashboard/DashboardPage';
+import UsersPage from '@/features/users/UsersPage';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -43,6 +44,7 @@ export default function AppRoutes() {
         }
       >
         <Route index element={<DashboardPage />} />
+        <Route path="users" element={<UsersPage />} />
         {/* Add more protected routes here */}
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

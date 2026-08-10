@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { RolesModule } from './modules/roles/roles.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { CashRegistersModule } from './modules/cash-registers/cash-registers.module';
@@ -21,6 +22,7 @@ import { validationSchema } from './config/validation';
     PrismaModule,
     AuthModule,
     UsersModule,
+    RolesModule,
     ClientsModule,
     AccountsModule,
     CashRegistersModule,
