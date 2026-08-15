@@ -3,6 +3,10 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/features/auth/LoginPage';
 import DashboardPage from '@/features/dashboard/DashboardPage';
 import UsersPage from '@/features/users/UsersPage';
+import ClientsPage from '@/features/clients/ClientsPage';
+import AccountsPage from '@/features/accounts/AccountsPage';
+import CashRegisterPage from '@/features/cash-register/CashRegisterPage';
+import MovementsPage from '@/features/movements/MovementsPage';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -45,7 +49,10 @@ export default function AppRoutes() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="users" element={<UsersPage />} />
-        {/* Add more protected routes here */}
+        <Route path="clients" element={<ClientsPage />} />
+        <Route path="accounts" element={<AccountsPage />} />
+        <Route path="cash-register" element={<CashRegisterPage />} />
+        <Route path="movements" element={<MovementsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

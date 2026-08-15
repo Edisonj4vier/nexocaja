@@ -27,15 +27,15 @@ import {
 } from '@/components/ui/select';
 import type { User, Role } from '../hooks/useUsers';
 
-const formSchema = z.object({
+const formSchemaBase = z.object({
   firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
   email: z.string().email('Debe ser un correo electrónico válido'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').optional(),
+  password: z.string().optional(),
   roleId: z.string().min(1, 'Debe seleccionar un rol'),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof formSchemaBase>;
 
 interface UserFormDialogProps {
   open: boolean;
@@ -56,8 +56,18 @@ export function UserFormDialog({
   onSubmit,
   isLoading,
 }: UserFormDialogProps) {
+  const schema = z.object({
+    firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+    lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
+    email: z.string().email('Debe ser un correo electrónico válido'),
+    password: user
+      ? z.string().optional().refine(val => !val || val.length >= 6, 'La contraseña debe tener al menos 6 caracteres')
+      : z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+    roleId: z.string().min(1, 'Debe seleccionar un rol'),
+  });
+
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       firstName: '',
       lastName: '',

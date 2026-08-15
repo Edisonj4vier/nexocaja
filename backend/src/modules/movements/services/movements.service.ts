@@ -121,7 +121,12 @@ export class MovementsService {
             select: { firstName: true, lastName: true },
           },
           account: {
-            select: { accountNumber: true },
+            select: { 
+              accountNumber: true,
+              client: {
+                select: { firstName: true, lastName: true, identificationNumber: true }
+              }
+            },
           },
         },
       }),

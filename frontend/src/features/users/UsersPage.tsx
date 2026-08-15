@@ -20,6 +20,7 @@ export default function UsersPage() {
     createUser,
     updateUser,
     toggleStatus,
+    clearError,
   } = useUsers();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -31,11 +32,13 @@ export default function UsersPage() {
   }, [fetchRoles, fetchUsers]);
 
   const handleCreate = () => {
+    clearError();
     setSelectedUser(null);
     setIsDialogOpen(true);
   };
 
   const handleEdit = (user: User) => {
+    clearError();
     setSelectedUser(user);
     setIsDialogOpen(true);
   };
@@ -97,7 +100,10 @@ export default function UsersPage() {
 
       <UserFormDialog
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) clearError();
+        }}
         user={selectedUser}
         roles={roles}
         currentUserId={currentUser?.id}

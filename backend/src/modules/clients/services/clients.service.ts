@@ -51,6 +51,7 @@ export class ClientsService {
         OR: [
           { firstName: { contains: search, mode: 'insensitive' } },
           { lastName: { contains: search, mode: 'insensitive' } },
+          { identificationNumber: { contains: search, mode: 'insensitive' } },
         ],
       }),
     };

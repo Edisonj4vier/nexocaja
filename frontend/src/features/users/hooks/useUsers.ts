@@ -96,5 +96,6 @@ export const useUsers = () => {
     createUser,
     updateUser,
     toggleStatus,
+    clearError: () => setError(null),
   };
 };
