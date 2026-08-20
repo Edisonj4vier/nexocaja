@@ -8,6 +8,8 @@ import { ClientsModule } from './modules/clients/clients.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { CashRegistersModule } from './modules/cash-registers/cash-registers.module';
 import { MovementsModule } from './modules/movements/movements.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
 @Module({
@@ -27,6 +29,8 @@ import { validationSchema } from './config/validation';
     AccountsModule,
     CashRegistersModule,
     MovementsModule,
+    DashboardModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}

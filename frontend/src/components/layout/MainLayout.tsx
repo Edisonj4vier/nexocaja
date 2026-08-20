@@ -1,7 +1,7 @@
 import { Outlet, NavLink } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
-import { LogOut, Home, Users, Wallet, Landmark, ArrowRightLeft, FileText } from 'lucide-react';
+import { LogOut, Home, Users, UserCheck, Wallet, Landmark, ArrowRightLeft, FileText } from 'lucide-react';
 
 export default function MainLayout() {
   const { user, logout } = useAuthStore();
@@ -10,15 +10,17 @@ export default function MainLayout() {
     logout();
   };
 
+  const isAdmin = user?.role?.name === 'ADMIN';
+
   const menuItems = [
-    { name: 'Dashboard', icon: Home, path: '/' },
-    { name: 'Usuarios', icon: Users, path: '/users' },
-    { name: 'Clientes', icon: Users, path: '/clients' },
-    { name: 'Cuentas', icon: Wallet, path: '/accounts' },
-    { name: 'Caja', icon: Landmark, path: '/cash-register' },
-    { name: 'Movimientos', icon: ArrowRightLeft, path: '/movements' },
-    { name: 'Reportes', icon: FileText, path: '/reports' },
-  ];
+    { name: 'Dashboard', icon: Home, path: '/', allowed: true },
+    { name: 'Usuarios', icon: Users, path: '/users', allowed: isAdmin },
+    { name: 'Clientes', icon: UserCheck, path: '/clients', allowed: true },
+    { name: 'Cuentas', icon: Wallet, path: '/accounts', allowed: true },
+    { name: 'Caja', icon: Landmark, path: '/cash-register', allowed: true },
+    { name: 'Movimientos', icon: ArrowRightLeft, path: '/movements', allowed: true },
+    { name: 'Reportes', icon: FileText, path: '/reports', allowed: true },
+  ].filter((item) => item.allowed);
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-zinc-950 overflow-hidden">

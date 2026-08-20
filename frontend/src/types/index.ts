@@ -91,6 +91,44 @@ export interface Movement {
   createdAt: string;
 }
 
+// --- Dashboard Summary ---
+export interface DashboardSummary {
+  totalClients: number;
+  activeAccounts: number;
+  totalUsers: number;
+  todayDeposits: {
+    total: number;
+    count: number;
+  };
+  todayWithdrawals: {
+    total: number;
+    count: number;
+  };
+  currentCashRegister: {
+    id: string;
+    status: CashRegisterStatus;
+    openingBalance: number;
+    currentBalance: number;
+    openedAt: string;
+    movementsCount: number;
+  } | null;
+  recentMovements: Movement[];
+}
+
+// --- Reports ---
+export type ReportFormatType = 'json' | 'xlsx' | 'pdf';
+
+export interface ReportFilter {
+  format?: ReportFormatType;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+  type?: MovementType;
+  accountId?: string;
+  cashRegisterId?: string;
+  userId?: string;
+}
+
 // --- Paginated Response ---
 export interface PaginatedResponse<T> {
   data: T[];

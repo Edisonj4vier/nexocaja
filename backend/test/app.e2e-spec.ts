@@ -752,11 +752,199 @@ describe('NexoCaja E2E Tests', () => {
   });
 
   // ============================================================
-  // CLEANUP: Eliminar datos de test
+  // SECCIÓN 9: DASHBOARD EN TIEMPO REAL
   // ============================================================
-  describe('9. Cleanup', () => {
-    it('9.1 — Los datos de test existen (resumen)', async () => {
-      // Este test simplemente verifica que todos los datos creados son accesibles
+  describe('9. Dashboard en Tiempo Real', () => {
+    it('9.1 — Consultar resumen de Dashboard como ADMIN', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/dashboard/summary')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      const summary = res.body.data;
+      expect(summary).toHaveProperty('totalClients');
+      expect(summary).toHaveProperty('activeAccounts');
+      expect(summary).toHaveProperty('totalUsers');
+      expect(summary).toHaveProperty('todayDeposits');
+      expect(summary).toHaveProperty('todayWithdrawals');
+      expect(summary).toHaveProperty('recentMovements');
+
+      expect(summary.totalClients).toBeGreaterThanOrEqual(2);
+      expect(summary.activeAccounts).toBeGreaterThanOrEqual(1);
+      expect(summary.todayDeposits.total).toBeGreaterThanOrEqual(800);
+      expect(summary.todayWithdrawals.total).toBeGreaterThanOrEqual(200);
+      expect(Array.isArray(summary.recentMovements)).toBe(true);
+      expect(summary.recentMovements.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('9.2 — Consultar resumen de Dashboard como CASHIER', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/dashboard/summary')
+        .set('Authorization', `Bearer ${cashierToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('totalClients');
+      expect(res.body.data).toHaveProperty('todayDeposits');
+    });
+
+    it('9.3 — Consultar Dashboard sin token devuelve 401', async () => {
+      await request(app.getHttpServer())
+        .get('/api/dashboard/summary')
+        .expect(401);
+    });
+  });
+
+  // ============================================================
+  // SECCIÓN 10: CENTRO DE REPORTES (JSON, EXCEL, PDF)
+  // ============================================================
+  describe('10. Centro de Reportes', () => {
+    it('10.1 — Reporte de Clientes en JSON', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/clients?format=json')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('total');
+      expect(res.body).toHaveProperty('data');
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.total).toBeGreaterThanOrEqual(2);
+    });
+
+    it('10.2 — Reporte de Clientes en Excel (.xlsx)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/clients?format=xlsx')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.headers['content-type']).toContain(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      expect(res.headers['content-disposition']).toContain('reporte_clientes_');
+      expect(res.body).toBeDefined();
+    });
+
+    it('10.3 — Reporte de Clientes en PDF (.pdf)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/clients?format=pdf')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.headers['content-type']).toContain('application/pdf');
+      expect(res.headers['content-disposition']).toContain('reporte_clientes_');
+    });
+
+    it('10.4 — Reporte de Cuentas en JSON', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/accounts?format=json')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('total');
+      expect(res.body).toHaveProperty('data');
+      expect(Array.isArray(res.body.data)).toBe(true);
+    });
+
+    it('10.5 — Reporte de Cuentas en Excel (.xlsx)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/accounts?format=xlsx')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.headers['content-type']).toContain(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+    });
+
+    it('10.6 — Reporte de Cuentas en PDF (.pdf)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/accounts?format=pdf')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.headers['content-type']).toContain('application/pdf');
+    });
+
+    it('10.7 — Reporte de Movimientos en JSON con bloque summary', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/movements?format=json')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('summary');
+      expect(res.body).toHaveProperty('data');
+      expect(res.body.summary).toHaveProperty('totalMovements');
+      expect(res.body.summary).toHaveProperty('totalDeposits');
+      expect(res.body.summary).toHaveProperty('totalWithdrawals');
+      expect(res.body.summary).toHaveProperty('netFlow');
+      expect(Number(res.body.summary.totalDeposits)).toBeGreaterThanOrEqual(800);
+      expect(Number(res.body.summary.totalWithdrawals)).toBeGreaterThanOrEqual(200);
+    });
+
+    it('10.8 — Reporte de Movimientos en Excel (.xlsx)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/movements?format=xlsx')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.headers['content-type']).toContain(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+    });
+
+    it('10.9 — Reporte de Movimientos en PDF (.pdf)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/movements?format=pdf')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.headers['content-type']).toContain('application/pdf');
+    });
+
+    it('10.10 — Reporte de Cajas en JSON', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/cash-registers?format=json')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('total');
+      expect(res.body).toHaveProperty('data');
+      expect(Array.isArray(res.body.data)).toBe(true);
+    });
+
+    it('10.11 — Reporte de Cajas en Excel (.xlsx)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/cash-registers?format=xlsx')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.headers['content-type']).toContain(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+    });
+
+    it('10.12 — Reporte de Cajas en PDF (.pdf)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/cash-registers?format=pdf')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.headers['content-type']).toContain('application/pdf');
+    });
+
+    it('10.13 — Reportes sin token devuelven 401', async () => {
+      await request(app.getHttpServer())
+        .get('/api/reports/movements')
+        .expect(401);
+    });
+  });
+
+  // ============================================================
+  // SECCIÓN 11: CLEANUP Y RESUMEN FINAL
+  // ============================================================
+  describe('11. Cleanup y Resumen Final', () => {
+    it('11.1 — Los datos de test existen y están consistentes', async () => {
       const [clientRes, accountRes] = await Promise.all([
         request(app.getHttpServer())
           .get(`/api/clients/${clientId}`)
@@ -769,10 +957,10 @@ describe('NexoCaja E2E Tests', () => {
       expect(clientRes.status).toBe(200);
       expect(accountRes.status).toBe(200);
 
-      console.log('\n📊 Resumen de tests E2E:');
+      console.log('\n📊 Resumen de tests E2E NexoCaja:');
       console.log(`   Cliente: ${clientRes.body.data.firstName} ${clientRes.body.data.lastName} (${clientId})`);
-      console.log(`   Cuenta: ${accountRes.body.data.accountNumber} — Saldo: $${Number(accountRes.body.data.balance).toFixed(2)}`);
-      console.log(`   Cajero creado: maria.test@nexocaja.local (${cashierUserId})`);
+      console.log(`   Cuenta: ${accountRes.body.data.accountNumber} — Saldo Final: $${Number(accountRes.body.data.balance).toFixed(2)}`);
+      console.log(`   Cajero creado: maria.${uniqueId}@nexocaja.local (${cashierUserId})`);
     });
   });
 });

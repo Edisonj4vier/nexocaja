@@ -7,6 +7,7 @@ import ClientsPage from '@/features/clients/ClientsPage';
 import AccountsPage from '@/features/accounts/AccountsPage';
 import CashRegisterPage from '@/features/cash-register/CashRegisterPage';
 import MovementsPage from '@/features/movements/MovementsPage';
+import ReportsPage from '@/features/reports/ReportsPage';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -53,6 +54,7 @@ export default function AppRoutes() {
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="cash-register" element={<CashRegisterPage />} />
         <Route path="movements" element={<MovementsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
