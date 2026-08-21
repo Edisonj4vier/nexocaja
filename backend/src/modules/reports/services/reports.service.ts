@@ -14,16 +14,21 @@ export class ReportsService {
   // ----------------------------------------------------
   async getClientsReport(query: QueryReportDto, res?: Response) {
     const where: any = {};
-    if (query.status) {
+    if (query.status && ['ACTIVE', 'INACTIVE'].includes(query.status)) {
       where.status = query.status;
     }
     if (query.startDate || query.endDate) {
       where.createdAt = {};
-      if (query.startDate) where.createdAt.gte = new Date(query.startDate);
-      if (query.endDate) {
+      if (query.startDate && !isNaN(new Date(query.startDate).getTime())) {
+        where.createdAt.gte = new Date(query.startDate);
+      }
+      if (query.endDate && !isNaN(new Date(query.endDate).getTime())) {
         const end = new Date(query.endDate);
         end.setHours(23, 59, 59, 999);
         where.createdAt.lte = end;
+      }
+      if (Object.keys(where.createdAt).length === 0) {
+        delete where.createdAt;
       }
     }
 
@@ -69,16 +74,21 @@ export class ReportsService {
   // ----------------------------------------------------
   async getAccountsReport(query: QueryReportDto, res?: Response) {
     const where: any = {};
-    if (query.status) {
+    if (query.status && ['ACTIVE', 'INACTIVE'].includes(query.status)) {
       where.status = query.status;
     }
     if (query.startDate || query.endDate) {
       where.openedAt = {};
-      if (query.startDate) where.openedAt.gte = new Date(query.startDate);
-      if (query.endDate) {
+      if (query.startDate && !isNaN(new Date(query.startDate).getTime())) {
+        where.openedAt.gte = new Date(query.startDate);
+      }
+      if (query.endDate && !isNaN(new Date(query.endDate).getTime())) {
         const end = new Date(query.endDate);
         end.setHours(23, 59, 59, 999);
         where.openedAt.lte = end;
+      }
+      if (Object.keys(where.openedAt).length === 0) {
+        delete where.openedAt;
       }
     }
 
@@ -115,18 +125,25 @@ export class ReportsService {
   // ----------------------------------------------------
   async getMovementsReport(query: QueryReportDto, res?: Response) {
     const where: any = {};
-    if (query.type) where.type = query.type as any;
+    if (query.type && ['DEPOSIT', 'WITHDRAWAL'].includes(query.type)) {
+      where.type = query.type as any;
+    }
     if (query.accountId) where.accountId = query.accountId;
     if (query.cashRegisterId) where.cashRegisterId = query.cashRegisterId;
     if (query.userId) where.userId = query.userId;
 
     if (query.startDate || query.endDate) {
       where.createdAt = {};
-      if (query.startDate) where.createdAt.gte = new Date(query.startDate);
-      if (query.endDate) {
+      if (query.startDate && !isNaN(new Date(query.startDate).getTime())) {
+        where.createdAt.gte = new Date(query.startDate);
+      }
+      if (query.endDate && !isNaN(new Date(query.endDate).getTime())) {
         const end = new Date(query.endDate);
         end.setHours(23, 59, 59, 999);
         where.createdAt.lte = end;
+      }
+      if (Object.keys(where.createdAt).length === 0) {
+        delete where.createdAt;
       }
     }
 
@@ -186,16 +203,23 @@ export class ReportsService {
   // ----------------------------------------------------
   async getCashRegistersReport(query: QueryReportDto, res?: Response) {
     const where: any = {};
-    if (query.status) where.status = query.status as any;
+    if (query.status && ['OPEN', 'CLOSED'].includes(query.status)) {
+      where.status = query.status as any;
+    }
     if (query.userId) where.userId = query.userId;
 
     if (query.startDate || query.endDate) {
       where.openedAt = {};
-      if (query.startDate) where.openedAt.gte = new Date(query.startDate);
-      if (query.endDate) {
+      if (query.startDate && !isNaN(new Date(query.startDate).getTime())) {
+        where.openedAt.gte = new Date(query.startDate);
+      }
+      if (query.endDate && !isNaN(new Date(query.endDate).getTime())) {
         const end = new Date(query.endDate);
         end.setHours(23, 59, 59, 999);
         where.openedAt.lte = end;
+      }
+      if (Object.keys(where.openedAt).length === 0) {
+        delete where.openedAt;
       }
     }
 

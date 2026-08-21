@@ -10,7 +10,11 @@ export default function MainLayout() {
     logout();
   };
 
-  const isAdmin = user?.role?.name === 'ADMIN';
+  const roleName =
+    typeof user?.role === 'string'
+      ? user.role
+      : (user?.role as any)?.name || '';
+  const isAdmin = roleName === 'ADMIN';
 
   const menuItems = [
     { name: 'Dashboard', icon: Home, path: '/', allowed: true },
@@ -58,7 +62,7 @@ export default function MainLayout() {
           </h2>
           <div className="flex items-center gap-4">
             <span className="text-sm text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
-              {user?.role?.name}
+              {roleName}
             </span>
             <Button variant="ghost" size="icon" onClick={handleLogout} title="Cerrar sesión">
               <LogOut className="w-5 h-5 text-zinc-500" />

@@ -88,6 +88,12 @@ export default function ReportsPage() {
     );
   };
 
+  const handleTabChange = (tabId: ReportType) => {
+    setSelectedReport(tabId);
+    setStatusFilter('ALL');
+    setMovementTypeFilter('ALL');
+  };
+
   // Auto-fetch preview when switching report type
   useEffect(() => {
     fetchReportPreview(selectedReport, getFilterParams());
@@ -145,7 +151,7 @@ export default function ReportsPage() {
           return (
             <button
               key={tab.id}
-              onClick={() => setSelectedReport(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`p-4 rounded-xl border text-left transition-all ${
                 isSelected
                   ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 shadow-md'
@@ -425,20 +431,22 @@ export default function ReportsPage() {
                                 : 'text-rose-600'
                             }`}
                           >
-                            ${row.amount}
+                            ${row.amount ?? '0.00'}
                           </td>
                           <td className="px-4 py-3 font-mono text-xs">
-                            {row.accountNumber}
+                            {row.accountNumber || '—'}
                           </td>
-                          <td className="px-4 py-3">{row.clientName}</td>
+                          <td className="px-4 py-3">{row.clientName || '—'}</td>
                           <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                            {row.cashier}
+                            {row.cashier || '—'}
                           </td>
                           <td className="px-4 py-3 text-zinc-500 text-xs">
-                            {row.observations}
+                            {row.observations || '—'}
                           </td>
                           <td className="px-4 py-3 text-zinc-500 text-xs">
-                            {new Date(row.createdAt).toLocaleDateString('es-EC')}
+                            {row.createdAt && !isNaN(new Date(row.createdAt).getTime())
+                              ? new Date(row.createdAt).toLocaleDateString('es-EC')
+                              : '—'}
                           </td>
                         </tr>
                       ))}
@@ -468,16 +476,16 @@ export default function ReportsPage() {
                           className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                         >
                           <td className="px-4 py-3 font-mono text-xs">
-                            {row.identificationType}: {row.identificationNumber}
+                            {row.identificationType ? `${row.identificationType}: ` : ''}{row.identificationNumber || '—'}
                           </td>
                           <td className="px-4 py-3 font-medium">
-                            {row.fullName}
+                            {row.fullName || '—'}
                           </td>
                           <td className="px-4 py-3 text-zinc-500">
-                            {row.phone}
+                            {row.phone || '—'}
                           </td>
                           <td className="px-4 py-3 text-zinc-500">
-                            {row.email}
+                            {row.email || '—'}
                           </td>
                           <td className="px-4 py-3">
                             <Badge
@@ -487,17 +495,19 @@ export default function ReportsPage() {
                                   : 'secondary'
                               }
                             >
-                              {row.status}
+                              {row.status || '—'}
                             </Badge>
                           </td>
                           <td className="px-4 py-3 text-center">
-                            {row.accountsCount}
+                            {row.accountsCount ?? 0}
                           </td>
                           <td className="px-4 py-3 font-bold text-emerald-600">
-                            ${row.totalBalance}
+                            ${row.totalBalance ?? '0.00'}
                           </td>
                           <td className="px-4 py-3 text-zinc-500 text-xs">
-                            {new Date(row.createdAt).toLocaleDateString('es-EC')}
+                            {row.createdAt && !isNaN(new Date(row.createdAt).getTime())
+                              ? new Date(row.createdAt).toLocaleDateString('es-EC')
+                              : '—'}
                           </td>
                         </tr>
                       ))}
@@ -525,14 +535,14 @@ export default function ReportsPage() {
                           className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                         >
                           <td className="px-4 py-3 font-mono font-medium">
-                            {row.accountNumber}
+                            {row.accountNumber || '—'}
                           </td>
-                          <td className="px-4 py-3">{row.clientName}</td>
+                          <td className="px-4 py-3">{row.clientName || '—'}</td>
                           <td className="px-4 py-3 font-mono text-xs text-zinc-500">
-                            {row.clientIdentification}
+                            {row.clientIdentification || '—'}
                           </td>
                           <td className="px-4 py-3 font-bold text-emerald-600">
-                            ${row.balance}
+                            ${row.balance ?? '0.00'}
                           </td>
                           <td className="px-4 py-3">
                             <Badge
@@ -542,11 +552,13 @@ export default function ReportsPage() {
                                   : 'secondary'
                               }
                             >
-                              {row.status}
+                              {row.status || '—'}
                             </Badge>
                           </td>
                           <td className="px-4 py-3 text-zinc-500 text-xs">
-                            {new Date(row.openedAt).toLocaleDateString('es-EC')}
+                            {row.openedAt && !isNaN(new Date(row.openedAt).getTime())
+                              ? new Date(row.openedAt).toLocaleDateString('es-EC')
+                              : '—'}
                           </td>
                         </tr>
                       ))}
@@ -576,7 +588,7 @@ export default function ReportsPage() {
                           className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                         >
                           <td className="px-4 py-3 font-medium">
-                            {row.cashier}
+                            {row.cashier || '—'}
                           </td>
                           <td className="px-4 py-3">
                             <Badge
@@ -589,23 +601,25 @@ export default function ReportsPage() {
                               {row.status === 'OPEN' ? 'ABIERTA' : 'CERRADA'}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3">${row.openingBalance}</td>
-                          <td className="px-4 py-3 font-bold text-emerald-600">
-                            ${row.closingBalance}
+                          <td className="px-4 py-3 font-mono">${row.openingBalance ?? '0.00'}</td>
+                          <td className="px-4 py-3 font-mono font-bold text-emerald-600">
+                            ${row.closingBalance ?? '0.00'}
                           </td>
                           <td className="px-4 py-3 text-center">
-                            {row.movementsCount}
+                            {row.movementsCount ?? 0}
                           </td>
                           <td className="px-4 py-3 text-zinc-500 text-xs">
-                            {new Date(row.openedAt).toLocaleString('es-EC')}
+                            {row.openedAt && !isNaN(new Date(row.openedAt).getTime())
+                              ? new Date(row.openedAt).toLocaleString('es-EC')
+                              : '—'}
                           </td>
                           <td className="px-4 py-3 text-zinc-500 text-xs">
-                            {row.closedAt !== '—'
+                            {row.closedAt && row.closedAt !== '—' && !isNaN(new Date(row.closedAt).getTime())
                               ? new Date(row.closedAt).toLocaleString('es-EC')
                               : '—'}
                           </td>
                           <td className="px-4 py-3 text-zinc-500 text-xs">
-                            {row.observations}
+                            {row.observations || '—'}
                           </td>
                         </tr>
                       ))}

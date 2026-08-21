@@ -17,6 +17,7 @@ export function useReports() {
         });
         setReportData(response.data);
       } catch (err: any) {
+        setReportData(null);
         setError(
           err.response?.data?.message || 'Error al obtener datos del reporte',
         );
