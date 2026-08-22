@@ -247,7 +247,9 @@ export class ReportsService {
         cashier: r.user ? `${r.user.firstName} ${r.user.lastName}` : '—',
         status: r.status,
         openingBalance: opening.toFixed(2),
-        closingBalance: r.closingBalance ? Number(r.closingBalance).toFixed(2) : calculatedCurrent.toFixed(2),
+        closingBalance: r.closingBalance
+          ? Number(r.closingBalance).toFixed(2)
+          : calculatedCurrent.toFixed(2),
         movementsCount: r.movements.length,
         openedAt: r.openedAt.toISOString(),
         closedAt: r.closedAt ? r.closedAt.toISOString() : '—',
@@ -330,17 +332,18 @@ export class ReportsService {
     res.end();
   }
 
-  private async exportMovementsExcel(
-    data: any[],
-    summary: any,
-    res: Response,
-  ) {
+  private async exportMovementsExcel(data: any[], summary: any, res: Response) {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Movimientos');
 
     // Add Summary header
     sheet.addRow(['REPORTE DE MOVIMIENTOS - NEXOCAJA']);
-    sheet.addRow([`Total Movimientos: ${summary.totalMovements}`, `Total Depósitos: $${summary.totalDeposits}`, `Total Retiros: $${summary.totalWithdrawals}`, `Flujo Neto: $${summary.netFlow}`]);
+    sheet.addRow([
+      `Total Movimientos: ${summary.totalMovements}`,
+      `Total Depósitos: $${summary.totalDeposits}`,
+      `Total Retiros: $${summary.totalWithdrawals}`,
+      `Flujo Neto: $${summary.netFlow}`,
+    ]);
     sheet.addRow([]);
 
     const headerRowIndex = 4;
@@ -458,7 +461,10 @@ export class ReportsService {
     doc.text('Estado', 400, y);
     doc.text('Saldo Total', 470, y, { align: 'right' });
 
-    doc.moveTo(40, y + 12).lineTo(555, y + 12).stroke('#CBD5E1');
+    doc
+      .moveTo(40, y + 12)
+      .lineTo(555, y + 12)
+      .stroke('#CBD5E1');
     y += 18;
 
     doc.font('Helvetica').fontSize(8);
@@ -500,7 +506,10 @@ export class ReportsService {
     doc.text('Estado', 410, y);
     doc.text('Saldo', 470, y, { align: 'right' });
 
-    doc.moveTo(40, y + 12).lineTo(555, y + 12).stroke('#CBD5E1');
+    doc
+      .moveTo(40, y + 12)
+      .lineTo(555, y + 12)
+      .stroke('#CBD5E1');
     y += 18;
 
     doc.font('Helvetica').fontSize(8);
@@ -551,7 +560,10 @@ export class ReportsService {
     doc.text('Cajero', 380, y);
     doc.text('Monto', 470, y, { align: 'right' });
 
-    doc.moveTo(40, y + 12).lineTo(555, y + 12).stroke('#CBD5E1');
+    doc
+      .moveTo(40, y + 12)
+      .lineTo(555, y + 12)
+      .stroke('#CBD5E1');
     y += 18;
 
     doc.font('Helvetica').fontSize(8);
@@ -565,12 +577,9 @@ export class ReportsService {
       doc.text(m.accountNumber, 180, y);
       doc.text(m.clientName.substring(0, 20), 260, y);
       doc.text(m.cashier.substring(0, 16), 380, y);
-      doc.text(
-        `${m.type === 'DEPOSIT' ? '+' : '-'}$${m.amount}`,
-        470,
-        y,
-        { align: 'right' },
-      );
+      doc.text(`${m.type === 'DEPOSIT' ? '+' : '-'}$${m.amount}`, 470, y, {
+        align: 'right',
+      });
       y += 15;
     }
 
@@ -600,7 +609,10 @@ export class ReportsService {
     doc.text('Movimientos', 400, y);
     doc.text('Apertura', 470, y, { align: 'right' });
 
-    doc.moveTo(40, y + 12).lineTo(555, y + 12).stroke('#CBD5E1');
+    doc
+      .moveTo(40, y + 12)
+      .lineTo(555, y + 12)
+      .stroke('#CBD5E1');
     y += 18;
 
     doc.font('Helvetica').fontSize(8);
@@ -631,11 +643,7 @@ export class ReportsService {
     doc.fontSize(12).font('Helvetica').fillColor('#475569');
     doc.text(title, 40, 60);
     doc.fontSize(8).fillColor('#94A3B8');
-    doc.text(
-      `Generado el: ${new Date().toLocaleString('es-EC')}`,
-      40,
-      76,
-    );
+    doc.text(`Generado el: ${new Date().toLocaleString('es-EC')}`, 40, 76);
     doc.moveTo(40, 90).lineTo(555, 90).stroke('#CBD5E1');
     doc.fillColor('#0F172A');
   }
@@ -644,12 +652,15 @@ export class ReportsService {
     const pages = doc.bufferedPageRange();
     for (let i = 0; i < pages.count; i++) {
       doc.switchToPage(i);
-      doc.fontSize(8).fillColor('#94A3B8').text(
-        `NexoCaja MVP © ${new Date().getFullYear()} — Página ${i + 1} de ${pages.count}`,
-        40,
-        790,
-        { align: 'center', width: 515 },
-      );
+      doc
+        .fontSize(8)
+        .fillColor('#94A3B8')
+        .text(
+          `NexoCaja MVP © ${new Date().getFullYear()} — Página ${i + 1} de ${pages.count}`,
+          40,
+          790,
+          { align: 'center', width: 515 },
+        );
     }
   }
 }

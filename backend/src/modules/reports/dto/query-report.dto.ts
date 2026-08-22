@@ -28,7 +28,9 @@ export class QueryReportDto {
   @IsString()
   status?: string;
 
-  @ApiPropertyOptional({ description: 'Filtro por tipo de movimiento (DEPOSIT | WITHDRAWAL)' })
+  @ApiPropertyOptional({
+    description: 'Filtro por tipo de movimiento (DEPOSIT | WITHDRAWAL)',
+  })
   @IsOptional()
   @IsString()
   type?: string;

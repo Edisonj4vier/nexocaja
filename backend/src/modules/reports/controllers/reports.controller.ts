@@ -16,10 +16,7 @@ export class ReportsController {
 
   @Roles('ADMIN', 'CASHIER')
   @Get('clients')
-  async getClientsReport(
-    @Query() query: QueryReportDto,
-    @Res() res: Response,
-  ) {
+  async getClientsReport(@Query() query: QueryReportDto, @Res() res: Response) {
     if (query.format === 'xlsx' || query.format === 'pdf') {
       return this.reportsService.getClientsReport(query, res);
     }

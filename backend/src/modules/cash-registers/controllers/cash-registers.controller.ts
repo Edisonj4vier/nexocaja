@@ -17,10 +17,7 @@ export class CashRegistersController {
 
   @Roles('ADMIN', 'CASHIER')
   @Post('open')
-  open(
-    @CurrentUser() user: { id: string },
-    @Body() dto: OpenCashRegisterDto,
-  ) {
+  open(@CurrentUser() user: { id: string }, @Body() dto: OpenCashRegisterDto) {
     return this.cashRegistersService.open(user.id, dto);
   }
 

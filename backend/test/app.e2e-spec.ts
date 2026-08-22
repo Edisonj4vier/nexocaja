@@ -100,9 +100,7 @@ describe('NexoCaja E2E Tests', () => {
     });
 
     it('1.4 — Acceso sin token devuelve 401', async () => {
-      await request(app.getHttpServer())
-        .get('/api/users')
-        .expect(401);
+      await request(app.getHttpServer()).get('/api/users').expect(401);
     });
 
     it('1.5 — Acceso con token inválido devuelve 401', async () => {
@@ -233,7 +231,10 @@ describe('NexoCaja E2E Tests', () => {
     it('2.10 — Login con usuario CASHIER creado', async () => {
       const res = await request(app.getHttpServer())
         .post('/api/auth/login')
-        .send({ email: `maria.${uniqueId}@nexocaja.local`, password: 'Cajera123*' })
+        .send({
+          email: `maria.${uniqueId}@nexocaja.local`,
+          password: 'Cajera123*',
+        })
         .expect(201);
 
       expect(res.body.data).toHaveProperty('accessToken');
@@ -291,7 +292,9 @@ describe('NexoCaja E2E Tests', () => {
 
       const clients = listRes.body.data?.data || listRes.body.data;
       const testClient = Array.isArray(clients)
-        ? clients.find((c: any) => c.identificationNumber === `CASHIER-${uniqueId}`)
+        ? clients.find(
+            (c: any) => c.identificationNumber === `CASHIER-${uniqueId}`,
+          )
         : null;
 
       if (testClient) {
@@ -878,8 +881,12 @@ describe('NexoCaja E2E Tests', () => {
       expect(res.body.summary).toHaveProperty('totalDeposits');
       expect(res.body.summary).toHaveProperty('totalWithdrawals');
       expect(res.body.summary).toHaveProperty('netFlow');
-      expect(Number(res.body.summary.totalDeposits)).toBeGreaterThanOrEqual(800);
-      expect(Number(res.body.summary.totalWithdrawals)).toBeGreaterThanOrEqual(200);
+      expect(Number(res.body.summary.totalDeposits)).toBeGreaterThanOrEqual(
+        800,
+      );
+      expect(Number(res.body.summary.totalWithdrawals)).toBeGreaterThanOrEqual(
+        200,
+      );
     });
 
     it('10.8 — Reporte de Movimientos en Excel (.xlsx)', async () => {
@@ -958,9 +965,15 @@ describe('NexoCaja E2E Tests', () => {
       expect(accountRes.status).toBe(200);
 
       console.log('\n📊 Resumen de tests E2E NexoCaja:');
-      console.log(`   Cliente: ${clientRes.body.data.firstName} ${clientRes.body.data.lastName} (${clientId})`);
-      console.log(`   Cuenta: ${accountRes.body.data.accountNumber} — Saldo Final: $${Number(accountRes.body.data.balance).toFixed(2)}`);
-      console.log(`   Cajero creado: maria.${uniqueId}@nexocaja.local (${cashierUserId})`);
+      console.log(
+        `   Cliente: ${clientRes.body.data.firstName} ${clientRes.body.data.lastName} (${clientId})`,
+      );
+      console.log(
+        `   Cuenta: ${accountRes.body.data.accountNumber} — Saldo Final: $${Number(accountRes.body.data.balance).toFixed(2)}`,
+      );
+      console.log(
+        `   Cajero creado: maria.${uniqueId}@nexocaja.local (${cashierUserId})`,
+      );
     });
   });
 });

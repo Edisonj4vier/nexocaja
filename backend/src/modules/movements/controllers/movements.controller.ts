@@ -17,10 +17,7 @@ export class MovementsController {
 
   @Roles('ADMIN', 'CASHIER')
   @Post('deposit')
-  deposit(
-    @CurrentUser() user: { id: string },
-    @Body() dto: CreateMovementDto,
-  ) {
+  deposit(@CurrentUser() user: { id: string }, @Body() dto: CreateMovementDto) {
     return this.movementsService.deposit(user.id, dto);
   }
 
