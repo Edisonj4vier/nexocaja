@@ -82,7 +82,8 @@ jobs:
         working-directory: ./backend
         env:
           DATABASE_URL: "postgresql://admin:adminpassword@localhost:5432/nexocaja_test_db?schema=public"
-          JWT_SECRET: "test-secret-ci"
+          JWT_SECRET: "this-is-a-very-long-test-secret-key-for-ci-tests-32-chars"
+          JWT_EXPIRES_IN: "1d"
         run: pnpm run test:e2e
 
 
