@@ -1,2 +1,2 @@
 allowBuilds:
-  cypress: set this to true or false
+  cypress: false

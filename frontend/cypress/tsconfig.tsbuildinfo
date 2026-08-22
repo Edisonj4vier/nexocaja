@@ -1,0 +1,1 @@
+{"root":["./e2e/01_auth.cy.ts","./e2e/02_users.cy.ts","./e2e/03_clients.cy.ts","./e2e/04_accounts.cy.ts","./e2e/05_cash_register.cy.ts","./e2e/06_movements.cy.ts","./e2e/07_dashboard.cy.ts","./e2e/08_reports.cy.ts","./e2e/09_full_workflow.cy.ts","./support/commands.ts","./support/e2e.ts"],"version":"6.0.3"}
