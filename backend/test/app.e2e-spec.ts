@@ -166,7 +166,7 @@ describe('NexoCaja E2E Tests', () => {
         .send({
           firstName: 'Otro',
           lastName: 'Usuario',
-          email: 'maria.test@nexocaja.local',
+          email: `maria.${uniqueId}@nexocaja.local`,
           password: 'Test123*',
           roleId: cashierRoleId,
         })
