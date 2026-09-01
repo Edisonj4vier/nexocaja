@@ -12,6 +12,7 @@ export default function UsersPage() {
   
   const {
     users,
+    pagination,
     roles,
     isLoading,
     error,
@@ -25,11 +26,12 @@ export default function UsersPage() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     fetchRoles();
-    fetchUsers();
-  }, [fetchRoles, fetchUsers]);
+    fetchUsers({ page });
+  }, [fetchRoles, fetchUsers, page]);
 
   const handleCreate = () => {
     clearError();
@@ -95,6 +97,8 @@ export default function UsersPage() {
           currentUserId={currentUser?.id}
           onEdit={handleEdit}
           onToggleStatus={handleToggleStatus}
+          pagination={pagination}
+          setPage={setPage}
         />
       )}
 

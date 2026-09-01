@@ -2,20 +2,38 @@ import { useState, useCallback } from 'react';
 import api from '@/lib/axios';
 import type { Client } from '@/types';
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  lastPage: number;
+}
+
 export const useClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>({ total: 0, page: 1, lastPage: 1 });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchClients = useCallback(async (search?: string) => {
+  const fetchClients = useCallback(async (params?: Record<string, any>) => {
     try {
       setIsLoading(true);
       setError(null);
-      const params: Record<string, string> = {};
-      if (search) params.search = search;
       const response = await api.get('/clients', { params });
-      const data = response.data;
-      setClients(Array.isArray(data) ? data : data.data || []);
+      const responseData = response.data.data;
+
+      if (responseData && Array.isArray(responseData.data)) {
+        setClients(responseData.data);
+        setPagination({
+          total: responseData.total || 0,
+          page: responseData.page || 1,
+          lastPage: responseData.lastPage || 1,
+        });
+      } else if (Array.isArray(responseData)) {
+        setClients(responseData);
+        setPagination({ total: responseData.length, page: 1, lastPage: 1 });
+      } else {
+        setClients([]);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al cargar clientes');
     } finally {
@@ -53,6 +71,7 @@ export const useClients = () => {
 
   return {
     clients,
+    pagination,
     isLoading,
     error,
     fetchClients,

@@ -19,18 +19,39 @@ export interface User {
   createdAt: string;
 }
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  lastPage: number;
+}
+
 export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>({ total: 0, page: 1, lastPage: 1 });
   const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (params?: Record<string, any>) => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await api.get('/users');
-      setUsers(response.data.data);
+      const response = await api.get('/users', { params });
+      const responseData = response.data.data;
+      
+      if (responseData && Array.isArray(responseData.data)) {
+        setUsers(responseData.data);
+        setPagination({
+          total: responseData.total || 0,
+          page: responseData.page || 1,
+          lastPage: responseData.lastPage || 1,
+        });
+      } else if (Array.isArray(responseData)) {
+        setUsers(responseData);
+        setPagination({ total: responseData.length, page: 1, lastPage: 1 });
+      } else {
+        setUsers([]);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al cargar usuarios');
     } finally {
@@ -88,6 +109,7 @@ export const useUsers = () => {
 
   return {
     users,
+    pagination,
     roles,
     isLoading,
     error,

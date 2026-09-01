@@ -32,6 +32,7 @@ import { TransactionFormDialog } from './components/TransactionFormDialog';
 export default function MovementsPage() {
   const {
     movements,
+    pagination,
     isLoading,
     error,
     fetchMovements,
@@ -42,17 +43,18 @@ export default function MovementsPage() {
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
   const [filterType, setFilterType] = useState<string>('ALL');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    fetchMovements();
-  }, [fetchMovements]);
+    const params: Record<string, any> = { page };
+    if (filterType !== 'ALL') params.type = filterType;
+    fetchMovements(params);
+  }, [fetchMovements, page, filterType]);
 
   const handleFilterChange = useCallback((type: string) => {
     setFilterType(type);
-    const params: Record<string, string> = {};
-    if (type !== 'ALL') params.type = type;
-    fetchMovements(params);
-  }, [fetchMovements]);
+    setPage(1); // Reset to page 1 when filter changes
+  }, []);
 
   const columns: ColumnDef<Movement>[] = [
     {
@@ -217,6 +219,29 @@ export default function MovementsPage() {
                 )}
               </TableBody>
             </Table>
+          </div>
+          <div className="flex items-center justify-between mt-4 px-2">
+            <div className="flex-1 text-sm text-zinc-500">
+              Página {pagination?.page || 1} de {pagination?.lastPage || 1} ({pagination?.total || 0} movimientos)
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={!pagination || pagination.page <= 1}
+              >
+                Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.min(pagination.lastPage, p + 1))}
+                disabled={!pagination || pagination.page >= pagination.lastPage}
+              >
+                Siguiente
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

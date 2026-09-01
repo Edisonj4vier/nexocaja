@@ -17,6 +17,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 export default function ClientsPage() {
   const {
     clients,
+    pagination,
     isLoading,
     error,
     fetchClients,
@@ -27,14 +28,19 @@ export default function ClientsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [viewClient, setViewClient] = useState<Client | null>(null);
+  const [page, setPage] = useState(1);
+  const [searchValue, setSearchValue] = useState<string>('');
 
   useEffect(() => {
-    fetchClients();
-  }, [fetchClients]);
+    const params: Record<string, any> = { page };
+    if (searchValue) params.search = searchValue;
+    fetchClients(params);
+  }, [fetchClients, page, searchValue]);
 
   const handleSearch = useCallback((value: string) => {
-    fetchClients(value || undefined);
-  }, [fetchClients]);
+    setSearchValue(value);
+    setPage(1); // Reset page on search
+  }, []);
 
   const handleCreate = () => {
     setSelectedClient(null);
@@ -95,6 +101,8 @@ export default function ClientsPage() {
           data={clients}
           onEdit={handleEdit}
           onView={handleView}
+          pagination={pagination}
+          setPage={setPage}
         />
       )}
 

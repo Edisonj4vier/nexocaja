@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 export default function AccountsPage() {
   const {
     accounts,
+    pagination,
     clients,
     isLoading,
     error,
@@ -34,15 +35,16 @@ export default function AccountsPage() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState('');
+  const [page, setPage] = useState(1);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     account: Account | null;
   }>({ open: false, account: null });
 
   useEffect(() => {
-    fetchAccounts();
+    fetchAccounts({ page });
     fetchClients();
-  }, [fetchAccounts, fetchClients]);
+  }, [fetchAccounts, fetchClients, page]);
 
   const handleCreate = () => {
     setSelectedClientId('');
@@ -98,6 +100,8 @@ export default function AccountsPage() {
         <AccountsTable
           data={accounts}
           onToggleStatus={handleToggleStatus}
+          pagination={pagination}
+          setPage={setPage}
         />
       )}
 

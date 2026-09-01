@@ -2,19 +2,39 @@ import { useState, useCallback } from 'react';
 import api from '@/lib/axios';
 import type { Account, Client } from '@/types';
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  lastPage: number;
+}
+
 export const useAccounts = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>({ total: 0, page: 1, lastPage: 1 });
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAccounts = useCallback(async (params?: Record<string, string>) => {
+  const fetchAccounts = useCallback(async (params?: Record<string, any>) => {
     try {
       setIsLoading(true);
       setError(null);
       const response = await api.get('/accounts', { params });
-      const data = response.data;
-      setAccounts(Array.isArray(data) ? data : data.data || []);
+      const responseData = response.data.data;
+
+      if (responseData && Array.isArray(responseData.data)) {
+        setAccounts(responseData.data);
+        setPagination({
+          total: responseData.total || 0,
+          page: responseData.page || 1,
+          lastPage: responseData.lastPage || 1,
+        });
+      } else if (Array.isArray(responseData)) {
+        setAccounts(responseData);
+        setPagination({ total: responseData.length, page: 1, lastPage: 1 });
+      } else {
+        setAccounts([]);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al cargar cuentas');
     } finally {
@@ -62,6 +82,7 @@ export const useAccounts = () => {
 
   return {
     accounts,
+    pagination,
     clients,
     isLoading,
     error,
