@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/features/auth/LoginPage';
 import DashboardPage from '@/features/dashboard/DashboardPage';
+import ModulesHubPage from '@/features/dashboard/ModulesHubPage';
 import UsersPage from '@/features/users/UsersPage';
 import ClientsPage from '@/features/clients/ClientsPage';
 import AccountsPage from '@/features/accounts/AccountsPage';
@@ -40,15 +41,26 @@ export default function AppRoutes() {
           </PublicRoute>
         }
       />
+      {/* Hub Route */}
       <Route
         path="/"
+        element={
+          <ProtectedRoute>
+            <ModulesHubPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Main App Routes (Sidebar Layout) */}
+      <Route
+        path="/app"
         element={
           <ProtectedRoute>
             <MainLayout />
           </ProtectedRoute>
         }
       >
-        <Route index element={<DashboardPage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="clients" element={<ClientsPage />} />
         <Route path="accounts" element={<AccountsPage />} />

@@ -58,69 +58,99 @@ export default function MovementsPage() {
 
   const columns: ColumnDef<Movement>[] = [
     {
-      accessorKey: 'type',
-      header: 'Tipo',
-      cell: ({ row }) => {
-        const type = row.original.type;
-        return type === 'DEPOSIT' ? (
-          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-            <ArrowDownToLine className="mr-1 h-3 w-3" /> Depósito
-          </Badge>
-        ) : (
-          <Badge className="bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200">
-            <ArrowUpFromLine className="mr-1 h-3 w-3" /> Retiro
-          </Badge>
-        );
-      },
-    },
-    {
-      accessorKey: 'amount',
-      header: 'Monto',
-      cell: ({ row }) => {
-        const type = row.original.type;
-        const color = type === 'DEPOSIT' ? 'text-green-600' : 'text-rose-600';
-        const sign = type === 'DEPOSIT' ? '+' : '-';
-        return (
-          <span className={`font-bold ${color}`}>
-            {sign}${Number(row.original.amount).toFixed(2)}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: 'account',
-      header: 'Cuenta',
+      id: 'index',
+      header: '#',
       cell: ({ row }) => (
-        <span className="font-mono text-sm">
-          {row.original.account?.accountNumber || '—'}
+        <span className="text-zinc-500 font-mono text-sm">
+          {((pagination?.page || 1) - 1) * 10 + row.index + 1}
         </span>
       ),
     },
     {
+      accessorKey: 'createdAt',
+      header: 'Fecha y Hora',
+      cell: ({ row }) => {
+        const date = new Date(row.original.createdAt);
+        const formatted = date.toLocaleString('es-EC', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        return <span className="text-sm font-medium">{formatted}</span>;
+      },
+    },
+    {
+      accessorKey: 'type',
+      header: 'Descripción',
+      cell: ({ row }) => {
+        const type = row.original.type;
+        const observations = row.original.observations || (type === 'DEPOSIT' ? 'Depósito en ventanilla' : 'Retiro en ventanilla');
+        return (
+          <div className="flex items-center gap-3">
+            {type === 'DEPOSIT' ? (
+              <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                <ArrowDownToLine className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center flex-shrink-0">
+                <ArrowUpFromLine className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+              </div>
+            )}
+            <div>
+              <p className="font-medium text-sm text-zinc-900 dark:text-zinc-100">
+                {observations}
+              </p>
+              <p className="text-xs text-zinc-500">
+                Cta: {row.original.account?.accountNumber || '—'}
+              </p>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
       accessorKey: 'account.client',
-      header: 'Cliente',
+      header: 'Cliente / Cajero',
       cell: ({ row }) => {
         const client = row.original.account?.client;
-        return client ? `${client.firstName} ${client.lastName}` : '—';
-      },
-    },
-    {
-      accessorKey: 'user',
-      header: 'Cajero / Usuario',
-      cell: ({ row }) => {
         const user = row.original.user;
-        return user ? `${user.firstName} ${user.lastName}` : '—';
+        return (
+          <div>
+            <p className="text-sm font-medium">{client ? `${client.lastName} ${client.firstName}` : '—'}</p>
+            <p className="text-xs text-zinc-500">Cajero: {user ? `${user.lastName} ${user.firstName}` : '—'}</p>
+          </div>
+        );
       },
     },
     {
-      accessorKey: 'observations',
-      header: 'Observaciones',
-      cell: ({ row }) => row.original.observations || '—',
+      accessorKey: 'status',
+      header: 'Estado',
+      cell: () => (
+        <Badge className="bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 font-normal">
+          Completado
+        </Badge>
+      ),
     },
     {
-      accessorKey: 'createdAt',
-      header: 'Fecha',
-      cell: ({ row }) => new Date(row.original.createdAt).toLocaleString('es-EC'),
+      accessorKey: 'amount',
+      header: () => <div className="text-right">Monto</div>,
+      cell: ({ row }) => {
+        const type = row.original.type;
+        const color = type === 'DEPOSIT' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+        const sign = type === 'DEPOSIT' ? '+' : '-';
+        const amount = Number(row.original.amount).toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        
+        return (
+          <div className={`text-right font-mono font-medium ${color}`}>
+            {sign}${amount}
+          </div>
+        );
+      },
     },
   ];
 

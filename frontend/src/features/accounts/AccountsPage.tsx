@@ -121,7 +121,7 @@ export default function AccountsPage() {
                 <SelectContent>
                   {clients.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
-                      {client.firstName} {client.lastName} — {client.identificationNumber}
+                      {client.lastName} {client.firstName} — {client.identificationNumber}
                     </SelectItem>
                   ))}
                 </SelectContent>

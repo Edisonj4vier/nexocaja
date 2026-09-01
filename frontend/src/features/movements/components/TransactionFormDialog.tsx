@@ -190,7 +190,7 @@ export function TransactionFormDialog({
 
               {foundAccount.client && (
                 <div className="pt-1 border-t border-zinc-200 dark:border-zinc-700 text-xs text-zinc-600 dark:text-zinc-300">
-                  <span className="font-medium">Cliente:</span> {foundAccount.client.firstName} {foundAccount.client.lastName} ({foundAccount.client.identificationNumber})
+                  <span className="font-medium">Cliente:</span> {foundAccount.client.lastName} {foundAccount.client.firstName} ({foundAccount.client.identificationNumber})
                 </div>
               )}
             </div>

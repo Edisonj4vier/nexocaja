@@ -42,32 +42,52 @@ export function ClientsTable({
 }: ClientsTableProps) {
   const columns: ColumnDef<Client>[] = [
     {
+      id: 'index',
+      header: '#',
+      cell: ({ row }) => (
+        <span className="text-zinc-500 font-mono text-sm">
+          {((pagination?.page || 1) - 1) * 10 + row.index + 1}
+        </span>
+      ),
+    },
+    {
       accessorKey: 'identificationNumber',
       header: 'Identificación',
       cell: ({ row }) => (
         <div>
           <span className="text-xs text-zinc-500">{row.original.identificationType}</span>
           <br />
-          <span className="font-medium">{row.original.identificationNumber}</span>
+          <span className="font-medium font-mono text-sm text-zinc-900 dark:text-zinc-100">{row.original.identificationNumber}</span>
         </div>
       ),
     },
     {
       accessorKey: 'firstName',
-      header: 'Nombre',
+      header: 'Cliente',
+      cell: ({ row }) => {
+        const initials = `${row.original.firstName[0]}${row.original.lastName[0]}`.toUpperCase();
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
+              {initials}
+            </div>
+            <div className="font-medium text-sm">
+              {row.original.lastName} {row.original.firstName}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'contacto',
+      header: 'Contacto',
       cell: ({ row }) => (
-        <div>{row.original.firstName} {row.original.lastName}</div>
+        <div>
+          {row.original.email && <div className="text-sm text-zinc-600 dark:text-zinc-400">{row.original.email}</div>}
+          {row.original.phone && <div className="text-xs text-zinc-500">{row.original.phone}</div>}
+          {!row.original.email && !row.original.phone && <span className="text-zinc-400">—</span>}
+        </div>
       ),
-    },
-    {
-      accessorKey: 'phone',
-      header: 'Teléfono',
-      cell: ({ row }) => row.original.phone || '—',
-    },
-    {
-      accessorKey: 'email',
-      header: 'Email',
-      cell: ({ row }) => row.original.email || '—',
     },
     {
       accessorKey: 'status',
@@ -76,28 +96,31 @@ export function ClientsTable({
     },
     {
       id: 'actions',
+      header: () => <div className="text-right">Acciones</div>,
       cell: ({ row }) => {
         const client = row.original;
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Abrir menú</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => onView(client)}>
-                <Eye className="mr-2 h-4 w-4" />
-                Ver Detalle
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(client)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="text-right">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Abrir menú</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onView(client)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Ver Detalle
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit(client)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         );
       },
     },

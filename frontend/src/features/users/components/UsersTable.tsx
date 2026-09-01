@@ -47,17 +47,37 @@ export function UsersTable({
 }: UsersTableProps) {
   const columns: ColumnDef<User>[] = [
     {
-      accessorKey: 'firstName',
-      header: 'Nombre',
+      id: 'index',
+      header: '#',
       cell: ({ row }) => (
-        <div>
-          {row.original.firstName} {row.original.lastName}
-        </div>
+        <span className="text-zinc-500 font-mono text-sm">
+          {((pagination?.page || 1) - 1) * 10 + row.index + 1}
+        </span>
       ),
     },
     {
+      accessorKey: 'firstName',
+      header: 'Usuario',
+      cell: ({ row }) => {
+        const initials = `${row.original.firstName[0]}${row.original.lastName[0]}`.toUpperCase();
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
+              {initials}
+            </div>
+            <div className="font-medium text-sm">
+              {row.original.lastName} {row.original.firstName}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
       accessorKey: 'email',
-      header: 'Email',
+      header: 'Contacto',
+      cell: ({ row }) => (
+        <span className="text-sm text-zinc-500">{row.original.email}</span>
+      ),
     },
     {
       accessorKey: 'role.name',
@@ -78,41 +98,44 @@ export function UsersTable({
     },
     {
       id: 'actions',
+      header: () => <div className="text-right">Acciones</div>,
       cell: ({ row }) => {
         const user = row.original;
         const isActive = user.status === 'ACTIVE';
 
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Abrir menú</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => onEdit(user)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar
-              </DropdownMenuItem>
-              {user.id !== currentUserId && (
-                <DropdownMenuItem onClick={() => onToggleStatus(user)}>
-                  {isActive ? (
-                    <>
-                      <PowerOff className="mr-2 h-4 w-4 text-red-500" />
-                      <span className="text-red-500">Desactivar</span>
-                    </>
-                  ) : (
-                    <>
-                      <Power className="mr-2 h-4 w-4 text-green-500" />
-                      <span className="text-green-500">Activar</span>
-                    </>
-                  )}
+          <div className="text-right">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Abrir menú</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onEdit(user)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar
                 </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {user.id !== currentUserId && (
+                  <DropdownMenuItem onClick={() => onToggleStatus(user)}>
+                    {isActive ? (
+                      <>
+                        <PowerOff className="mr-2 h-4 w-4 text-red-500" />
+                        <span className="text-red-500">Desactivar</span>
+                      </>
+                    ) : (
+                      <>
+                        <Power className="mr-2 h-4 w-4 text-green-500" />
+                        <span className="text-green-500">Activar</span>
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         );
       },
     },

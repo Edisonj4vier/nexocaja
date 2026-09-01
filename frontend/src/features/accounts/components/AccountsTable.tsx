@@ -13,6 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,10 +41,25 @@ export function AccountsTable({
 }: AccountsTableProps) {
   const columns: ColumnDef<Account>[] = [
     {
+      id: 'index',
+      header: '#',
+      cell: ({ row }) => (
+        <span className="text-zinc-500 font-mono text-sm">
+          {((pagination?.page || 1) - 1) * 10 + row.index + 1}
+        </span>
+      ),
+    },
+    {
       accessorKey: 'accountNumber',
       header: 'Nro. Cuenta',
       cell: ({ row }) => (
-        <span className="font-mono font-medium">{row.original.accountNumber}</span>
+        <div>
+          <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">{row.original.accountNumber}</span>
+          <br />
+          <Badge variant="outline" className="text-[10px] uppercase font-normal mt-1 bg-zinc-50 dark:bg-zinc-800 text-zinc-500">
+            Ahorros
+          </Badge>
+        </div>
       ),
     },
     {
@@ -51,16 +67,30 @@ export function AccountsTable({
       header: 'Cliente',
       cell: ({ row }) => {
         const client = row.original.client;
-        return client ? `${client.firstName} ${client.lastName}` : '—';
+        if (!client) return '—';
+        const initials = `${client.firstName[0]}${client.lastName[0]}`.toUpperCase();
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
+              {initials}
+            </div>
+            <div className="font-medium text-sm">
+              {client.lastName} {client.firstName}
+            </div>
+          </div>
+        );
       },
     },
     {
       accessorKey: 'balance',
-      header: 'Saldo',
+      header: () => <div className="text-right">Saldo</div>,
       cell: ({ row }) => (
-        <span className="font-bold text-emerald-600 dark:text-emerald-400">
-          ${Number(row.original.balance).toFixed(2)}
-        </span>
+        <div className="text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+          ${Number(row.original.balance).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
+        </div>
       ),
     },
     {
@@ -75,35 +105,38 @@ export function AccountsTable({
     },
     {
       id: 'actions',
+      header: () => <div className="text-right">Acciones</div>,
       cell: ({ row }) => {
         const account = row.original;
         const isActive = account.status === 'ACTIVE';
 
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Abrir menú</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => onToggleStatus(account)}>
-                {isActive ? (
-                  <>
-                    <PowerOff className="mr-2 h-4 w-4 text-red-500" />
-                    <span className="text-red-500">Desactivar</span>
-                  </>
-                ) : (
-                  <>
-                    <Power className="mr-2 h-4 w-4 text-green-500" />
-                    <span className="text-green-500">Activar</span>
-                  </>
-                )}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="text-right">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Abrir menú</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onToggleStatus(account)}>
+                  {isActive ? (
+                    <>
+                      <PowerOff className="mr-2 h-4 w-4 text-red-500" />
+                      <span className="text-red-500">Desactivar</span>
+                    </>
+                  ) : (
+                    <>
+                      <Power className="mr-2 h-4 w-4 text-green-500" />
+                      <span className="text-green-500">Activar</span>
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         );
       },
     },

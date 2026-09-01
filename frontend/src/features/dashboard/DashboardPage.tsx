@@ -172,12 +172,12 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-4 py-3 text-zinc-900 dark:text-zinc-100 font-medium">
                         {m.account?.client
-                          ? `${m.account.client.firstName} ${m.account.client.lastName}`
+                          ? `${m.account.client.lastName} ${m.account.client.firstName}`
                           : '—'}
                       </td>
                       <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                         {m.user
-                          ? `${m.user.firstName} ${m.user.lastName}`
+                          ? `${m.user.lastName} ${m.user.firstName}`
                           : '—'}
                       </td>
                       <td className="px-4 py-3 text-zinc-500 text-xs">
