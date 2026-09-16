@@ -18,6 +18,7 @@ interface TransactionFormDialogProps {
   type: 'deposit' | 'withdrawal';
   onSubmit: (data: { accountId: string; amount: number; observations?: string }) => Promise<boolean>;
   isLoading: boolean;
+  initialAccountNumber?: string;
 }
 
 export function TransactionFormDialog({
@@ -26,6 +27,7 @@ export function TransactionFormDialog({
   type,
   onSubmit,
   isLoading,
+  initialAccountNumber,
 }: TransactionFormDialogProps) {
   const [accountSearch, setAccountSearch] = useState('');
   const [foundAccount, setFoundAccount] = useState<Account | null>(null);
@@ -34,20 +36,9 @@ export function TransactionFormDialog({
   const [searchError, setSearchError] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
-  // Reset internal state when dialog opens or closes
-  useEffect(() => {
-    if (open) {
-      setAccountSearch('');
-      setFoundAccount(null);
-      setAmount('');
-      setObservations('');
-      setSearchError('');
-      setIsSearching(false);
-    }
-  }, [open]);
-
-  const searchAccount = async () => {
-    if (!accountSearch.trim()) {
+  const searchAccount = async (targetAccountNum?: string) => {
+    const term = (targetAccountNum !== undefined ? targetAccountNum : accountSearch).trim();
+    if (!term) {
       setSearchError('Por favor ingresa un número de cuenta');
       return;
     }
@@ -58,7 +49,7 @@ export function TransactionFormDialog({
       setFoundAccount(null);
 
       const response = await api.get('/accounts', {
-        params: { accountNumber: accountSearch.trim() },
+        params: { accountNumber: term },
       });
       const data = response.data;
       const accounts = Array.isArray(data) ? data : data.data || [];
@@ -79,6 +70,23 @@ export function TransactionFormDialog({
       setIsSearching(false);
     }
   };
+
+  // Reset internal state and auto-search if initialAccountNumber provided
+  useEffect(() => {
+    if (open) {
+      const initial = initialAccountNumber || '';
+      setAccountSearch(initial);
+      setFoundAccount(null);
+      setAmount('');
+      setObservations('');
+      setSearchError('');
+      setIsSearching(false);
+
+      if (initial) {
+        searchAccount(initial);
+      }
+    }
+  }, [open, initialAccountNumber]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +160,7 @@ export function TransactionFormDialog({
                 type="button"
                 variant="outline"
                 size="icon"
-                onClick={searchAccount}
+                onClick={() => searchAccount()}
                 disabled={isSearching || !accountSearch.trim()}
               >
                 {isSearching ? (

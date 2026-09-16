@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMovements } from './hooks/useMovements';
 import type { Movement } from '@/types';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -26,13 +27,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+} from 'lucide-react';
 import { TransactionFormDialog } from './components/TransactionFormDialog';
 import { TableToolbar } from '@/components/shared/TableToolbar';
 import { useDebounce } from '@/hooks/useDebounce';
 import { downloadFile } from '@/lib/utils';
 
 export default function MovementsPage() {
+  const [searchParams] = useSearchParams();
+  const accountParam = searchParams.get('account') || '';
+  const actionParam = searchParams.get('action') || '';
+
   const {
     movements,
     pagination,
@@ -44,11 +52,13 @@ export default function MovementsPage() {
     exportMovements,
   } = useMovements();
 
-  const [isDepositOpen, setIsDepositOpen] = useState(false);
-  const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
+  const [isDepositOpen, setIsDepositOpen] = useState(
+    actionParam === 'deposit' || Boolean(accountParam && actionParam !== 'withdrawal')
+  );
+  const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(actionParam === 'withdrawal');
   const [filterType, setFilterType] = useState<string>('ALL');
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(accountParam);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   
@@ -325,6 +335,7 @@ export default function MovementsPage() {
         type="deposit"
         onSubmit={deposit}
         isLoading={isLoading}
+        initialAccountNumber={accountParam}
       />
 
       {/* Withdrawal Dialog */}
@@ -334,6 +345,7 @@ export default function MovementsPage() {
         type="withdrawal"
         onSubmit={withdrawal}
         isLoading={isLoading}
+        initialAccountNumber={accountParam}
       />
     </div>
   );

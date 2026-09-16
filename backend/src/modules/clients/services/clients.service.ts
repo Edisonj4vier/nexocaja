@@ -8,7 +8,7 @@ import { ExportService } from '../../export/export.service';
 import { CreateClientDto } from '../dto/create-client.dto';
 import { UpdateClientDto } from '../dto/update-client.dto';
 import { QueryClientDto } from '../dto/query-client.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, PersonType, ClientStatus } from '@prisma/client';
 
 @Injectable()
 export class ClientsService {
@@ -17,6 +17,21 @@ export class ClientsService {
     private readonly exportService: ExportService,
   ) {}
 
+  private async generateNextMemberCode(): Promise<string> {
+    const count = await this.prisma.client.count();
+    let nextNum = count + 1;
+    let code = `SOC-${String(nextNum).padStart(6, '0')}`;
+    let exists = await this.prisma.client.findUnique({ where: { memberCode: code } });
+
+    while (exists) {
+      nextNum++;
+      code = `SOC-${String(nextNum).padStart(6, '0')}`;
+      exists = await this.prisma.client.findUnique({ where: { memberCode: code } });
+    }
+
+    return code;
+  }
+
   async create(dto: CreateClientDto) {
     const existingClient = await this.prisma.client.findUnique({
       where: { identificationNumber: dto.identificationNumber },
@@ -24,14 +39,46 @@ export class ClientsService {
 
     if (existingClient) {
       throw new ConflictException(
-        'Ya existe un cliente con esta identificación.',
+        'Ya existe un socio con esta identificación.',
       );
     }
 
+    const memberCode = dto.memberCode || (await this.generateNextMemberCode());
+
     const client = await this.prisma.client.create({
       data: {
-        ...dto,
+        personType: dto.personType || PersonType.NATURAL,
+        memberCode,
+        identificationType: dto.identificationType,
+        identificationNumber: dto.identificationNumber,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        phone: dto.phone,
+        secondaryPhone: dto.secondaryPhone,
+        email: dto.email,
+        address: dto.address,
+        province: dto.province,
+        city: dto.city,
+        parish: dto.parish,
+        addressReference: dto.addressReference,
         birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
+        gender: dto.gender,
+        maritalStatus: dto.maritalStatus,
+        nationality: dto.nationality || 'Ecuatoriana',
+        occupation: dto.occupation,
+        profession: dto.profession,
+        employerCompany: dto.employerCompany,
+        monthlyIncome: dto.monthlyIncome ? new Prisma.Decimal(dto.monthlyIncome) : null,
+        economicActivity: dto.economicActivity,
+        workAddress: dto.workAddress,
+        emergencyContactName: dto.emergencyContactName,
+        emergencyContactRelationship: dto.emergencyContactRelationship,
+        emergencyContactPhone: dto.emergencyContactPhone,
+        memberType: dto.memberType || 'ACTIVO',
+        affiliationDate: dto.affiliationDate ? new Date(dto.affiliationDate) : new Date(),
+        totalContributions: dto.totalContributions ? new Prisma.Decimal(dto.totalContributions) : new Prisma.Decimal(0),
+        agency: dto.agency || 'Matriz',
+        status: dto.status || ClientStatus.ACTIVE,
       },
     });
 
@@ -58,6 +105,7 @@ export class ClientsService {
           { firstName: { contains: search, mode: 'insensitive' } },
           { lastName: { contains: search, mode: 'insensitive' } },
           { identificationNumber: { contains: search, mode: 'insensitive' } },
+          { memberCode: { contains: search, mode: 'insensitive' } },
         ],
       }),
       ...((startDate || endDate) && {
@@ -75,6 +123,11 @@ export class ClientsService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          _count: {
+            select: { accounts: true },
+          },
+        },
       }),
     ]);
 
@@ -92,46 +145,120 @@ export class ClientsService {
   async findOne(id: string) {
     const client = await this.prisma.client.findUnique({
       where: { id },
+      include: {
+        accounts: {
+          include: {
+            product: true,
+          },
+        },
+      },
     });
 
     if (!client) {
-      throw new NotFoundException('Cliente no encontrado.');
+      throw new NotFoundException('Socio no encontrado.');
     }
 
     return client;
   }
 
-  async update(id: string, dto: UpdateClientDto) {
-    const client = await this.findOne(id);
+  async findOne360(id: string) {
+    const client = await this.prisma.client.findUnique({
+      where: { id },
+      include: {
+        accounts: {
+          include: {
+            product: true,
+            beneficiaries: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
 
-    if (
-      dto.identificationNumber &&
-      dto.identificationNumber !== client.identificationNumber
-    ) {
-      const existingClient = await this.prisma.client.findUnique({
-        where: { identificationNumber: dto.identificationNumber },
+    if (!client) {
+      throw new NotFoundException('Socio no encontrado.');
+    }
+
+    // Get all movements for all accounts of this client
+    const accountIds = client.accounts.map((a) => a.id);
+    const movements = await this.prisma.movement.findMany({
+      where: {
+        accountId: { in: accountIds },
+      },
+      include: {
+        account: {
+          select: { accountNumber: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    // Calculate total savings (sum of active account balances)
+    const totalSavings = client.accounts
+      .filter((a) => a.status === 'ACTIVE')
+      .reduce((acc, curr) => acc + Number(curr.balance), 0);
+
+    return {
+      ...client,
+      summary: {
+        totalSavings,
+        totalContributions: Number(client.totalContributions),
+        accountsCount: client.accounts.length,
+        activeAccountsCount: client.accounts.filter((a) => a.status === 'ACTIVE').length,
+        recentMovementsCount: movements.length,
+      },
+      recentMovements: movements,
+    };
+  }
+
+  async update(id: string, dto: UpdateClientDto) {
+    await this.findOne(id);
+
+    if (dto.identificationNumber) {
+      const existing = await this.prisma.client.findFirst({
+        where: {
+          identificationNumber: dto.identificationNumber,
+          NOT: { id },
+        },
       });
 
-      if (existingClient) {
+      if (existing) {
         throw new ConflictException(
-          'Ya existe otro cliente con esta identificación.',
+          'Ya existe otro socio con esta identificación.',
         );
       }
     }
 
-    const updated = await this.prisma.client.update({
+    return this.prisma.client.update({
       where: { id },
       data: {
         ...dto,
         birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
+        monthlyIncome: dto.monthlyIncome ? new Prisma.Decimal(dto.monthlyIncome) : undefined,
+        totalContributions: dto.totalContributions ? new Prisma.Decimal(dto.totalContributions) : undefined,
       },
     });
-
-    return updated;
   }
 
-  async export(query: QueryClientDto, format: 'excel' | 'pdf') {
-    const { status, search, identificationNumber, startDate, endDate } = query;
+  async toggleStatus(id: string) {
+    const client = await this.findOne(id);
+    const newStatus =
+      client.status === ClientStatus.ACTIVE
+        ? ClientStatus.INACTIVE
+        : ClientStatus.ACTIVE;
+
+    return this.prisma.client.update({
+      where: { id },
+      data: { status: newStatus },
+    });
+  }
+
+  async export(param1: any, param2: any) {
+    const format: 'excel' | 'pdf' = typeof param1 === 'string' ? param1 : param2;
+    const query: QueryClientDto = typeof param1 === 'object' ? param1 : param2;
+    const { status, search, identificationNumber, startDate, endDate } = query || {};
+
     const where: Prisma.ClientWhereInput = {
       ...(status && { status }),
       ...(identificationNumber && { identificationNumber }),
@@ -140,6 +267,7 @@ export class ClientsService {
           { firstName: { contains: search, mode: 'insensitive' } },
           { lastName: { contains: search, mode: 'insensitive' } },
           { identificationNumber: { contains: search, mode: 'insensitive' } },
+          { memberCode: { contains: search, mode: 'insensitive' } },
         ],
       }),
       ...((startDate || endDate) && {
@@ -152,27 +280,39 @@ export class ClientsService {
 
     const clients = await this.prisma.client.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { lastName: 'asc' },
     });
 
-    const data = clients.map((c) => ({
-      name: `${c.lastName} ${c.firstName}`,
-      identificationNumber: c.identificationNumber,
-      status: c.status,
-      createdAt: c.createdAt.toLocaleString(),
-    }));
-
     const columns = [
-      { header: 'Cliente', key: 'name', width: 40 },
-      { header: 'Identificación', key: 'identificationNumber', width: 25 },
-      { header: 'Estado', key: 'status', width: 15 },
-      { header: 'Fecha Registro', key: 'createdAt', width: 20 },
+      { header: 'CÓDIGO', key: 'memberCode', width: 14 },
+      { header: 'TIPO IDENT.', key: 'identificationType', width: 12 },
+      { header: 'IDENTIFICACIÓN', key: 'identificationNumber', width: 16 },
+      { header: 'APELLIDOS Y NOMBRES', key: 'fullName', width: 30 },
+      { header: 'TELÉFONO', key: 'phone', width: 15 },
+      { header: 'EMAIL', key: 'email', width: 25 },
+      { header: 'ESTADO', key: 'status', width: 12 },
+      { header: 'FECHA REGISTRO', key: 'createdAt', width: 16 },
     ];
+
+    const data = clients.map((c) => ({
+      memberCode: c.memberCode || 'N/A',
+      identificationType: c.identificationType,
+      identificationNumber: c.identificationNumber,
+      fullName: `${c.lastName} ${c.firstName}`,
+      phone: c.phone || 'N/A',
+      email: c.email || 'N/A',
+      status: c.status,
+      createdAt: c.createdAt.toISOString().split('T')[0],
+    }));
 
     if (format === 'excel') {
       return this.exportService.generateExcel(columns, data);
     } else {
-      return this.exportService.generatePdf('Reporte de Clientes', columns, data);
+      return this.exportService.generatePdf(
+        'Listado Oficial de Socios Registrados',
+        columns,
+        data,
+      );
     }
   }
 }

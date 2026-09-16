@@ -37,20 +37,30 @@ export const useUsers = () => {
       setIsLoading(true);
       setError(null);
       const response = await api.get('/users', { params });
-      const responseData = response.data.data;
+      const result = response.data;
       
-      if (responseData && Array.isArray(responseData.data)) {
-        setUsers(responseData.data);
+      if (result && Array.isArray(result.data)) {
+        setUsers(result.data);
+        const meta = result.meta || {};
         setPagination({
-          total: responseData.total || 0,
-          page: responseData.page || 1,
-          lastPage: responseData.lastPage || 1,
+          total: meta.total ?? result.data.length,
+          page: meta.page ?? 1,
+          lastPage: meta.totalPages ?? meta.lastPage ?? 1,
         });
-      } else if (Array.isArray(responseData)) {
-        setUsers(responseData);
-        setPagination({ total: responseData.length, page: 1, lastPage: 1 });
+      } else if (result?.data && Array.isArray(result.data.data)) {
+        setUsers(result.data.data);
+        const meta = result.data.meta || {};
+        setPagination({
+          total: meta.total ?? result.data.data.length,
+          page: meta.page ?? 1,
+          lastPage: meta.totalPages ?? meta.lastPage ?? 1,
+        });
+      } else if (Array.isArray(result)) {
+        setUsers(result);
+        setPagination({ total: result.length, page: 1, lastPage: 1 });
       } else {
         setUsers([]);
+        setPagination({ total: 0, page: 1, lastPage: 1 });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al cargar usuarios');

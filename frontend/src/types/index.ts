@@ -1,5 +1,5 @@
 // ==========================================
-// Shared Types — NexoCaja
+// Shared Types — NexoCaja Core Financiero
 // ==========================================
 
 // --- Roles ---
@@ -24,38 +24,131 @@ export interface User {
   createdAt: string;
 }
 
-// --- Clients ---
-export type ClientStatus = 'ACTIVE' | 'INACTIVE';
+// --- Clients / Socios ---
+export type PersonType = 'NATURAL' | 'LEGAL';
+export type ClientStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'SUSPENDED';
 
 export interface Client {
   id: string;
+  personType?: PersonType;
+  memberCode?: string;
   identificationType: string;
   identificationNumber: string;
   firstName: string;
   lastName: string;
   phone?: string;
+  secondaryPhone?: string;
   email?: string;
   address?: string;
+  province?: string;
+  city?: string;
+  parish?: string;
+  addressReference?: string;
   birthDate?: string;
+  gender?: string;
+  maritalStatus?: string;
+  nationality?: string;
+  
+  // Socioeconomic
+  occupation?: string;
+  profession?: string;
+  employerCompany?: string;
+  monthlyIncome?: number | string;
+  economicActivity?: string;
+  workAddress?: string;
+
+  // Emergency contact
+  emergencyContactName?: string;
+  emergencyContactRelationship?: string;
+  emergencyContactPhone?: string;
+
+  // Member info
+  memberType?: string;
+  affiliationDate?: string;
+  totalContributions?: number | string;
+  agency?: string;
+
+  // Status & Audit
   status: ClientStatus;
+  statusReason?: string;
+  statusChangedAt?: string;
+  statusChangedBy?: string;
+
   accounts?: Account[];
+  _count?: {
+    accounts: number;
+  };
   createdAt: string;
   updatedAt: string;
 }
 
+// --- Financial Products ---
+export type ProductType = 'SAVINGS' | 'PROGRAMMED_SAVINGS' | 'TERM_DEPOSIT' | 'CONTRIBUTION';
+
+export interface FinancialProduct {
+  id: string;
+  code: string;
+  name: string;
+  type: ProductType;
+  interestRate: number | string;
+  interestPeriodicity: string;
+  minOpeningAmount: number | string;
+  minBalance: number | string;
+  accountingAccount?: string;
+  accountingInterest?: string;
+  accountingCash?: string;
+  status: string;
+}
+
+// --- Beneficiaries ---
+export interface Beneficiary {
+  id?: string;
+  accountId?: string;
+  fullName: string;
+  identificationNumber?: string;
+  relationship: string;
+  percentage: number;
+}
+
 // --- Accounts ---
-export type AccountStatus = 'ACTIVE' | 'INACTIVE';
+export type AccountStatus = 'ACTIVE' | 'BLOCKED' | 'INACTIVE' | 'CLOSED' | 'FROZEN';
 
 export interface Account {
   id: string;
   accountNumber: string;
   clientId: string;
   client?: Client;
+  productId?: string;
+  product?: FinancialProduct;
+  currency?: string;
+  openingAmount?: number | string;
+  interestRate?: number | string;
+  agency?: string;
   balance: string | number;
   status: AccountStatus;
+  statusReason?: string;
   openedAt: string;
+  closedAt?: string | null;
+  beneficiaries?: Beneficiary[];
+  movements?: Movement[];
+  _count?: {
+    movements: number;
+  };
   createdAt: string;
   updatedAt: string;
+}
+
+// --- Socio 360 Summary ---
+export interface Client360 extends Client {
+  accounts: Account[];
+  summary: {
+    totalSavings: number;
+    totalContributions: number;
+    accountsCount: number;
+    activeAccountsCount: number;
+    recentMovementsCount: number;
+  };
+  recentMovements: Movement[];
 }
 
 // --- Cash Registers ---
@@ -91,7 +184,7 @@ export interface Movement {
   createdAt: string;
 }
 
-// --- Dashboard Summary ---
+// --- Dashboard ---
 export interface DashboardSummary {
   totalClients: number;
   activeAccounts: number;
@@ -127,13 +220,4 @@ export interface ReportFilter {
   accountId?: string;
   cashRegisterId?: string;
   userId?: string;
-}
-
-// --- Paginated Response ---
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
 }

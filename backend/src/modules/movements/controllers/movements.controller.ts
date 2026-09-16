@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Query, UseGuards, Res } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { MovementsService } from '../services/movements.service';
 import { CreateMovementDto } from '../dto/create-movement.dto';

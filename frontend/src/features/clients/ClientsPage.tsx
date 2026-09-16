@@ -1,22 +1,17 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useClients } from './hooks/useClients';
 import type { Client } from '@/types';
 import { ClientsTable } from './components/ClientsTable';
-import { ClientFormDialog } from './components/ClientFormDialog';
+import { ClientWizardDialog } from './components/ClientWizardDialog';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import { TableToolbar } from '@/components/shared/TableToolbar';
 import { useDebounce } from '@/hooks/useDebounce';
 import { downloadFile } from '@/lib/utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { StatusBadge } from '@/components/shared/StatusBadge';
 
 export default function ClientsPage() {
+  const navigate = useNavigate();
   const {
     clients,
     pagination,
@@ -28,9 +23,8 @@ export default function ClientsPage() {
     exportClients,
   } = useClients();
 
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [viewClient, setViewClient] = useState<Client | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -48,30 +42,32 @@ export default function ClientsPage() {
 
   const handleCreate = () => {
     setSelectedClient(null);
-    setIsFormOpen(true);
+    setIsWizardOpen(true);
   };
 
   const handleEdit = (client: Client) => {
     setSelectedClient(client);
-    setIsFormOpen(true);
+    setIsWizardOpen(true);
   };
 
   const handleView = (client: Client) => {
-    setViewClient(client);
+    navigate(`/app/clients/${client.id}`);
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleWizardSubmit = async (data: any) => {
     if (selectedClient) {
       await updateClient(selectedClient.id, data);
     } else {
       await createClient(data);
     }
+    setIsWizardOpen(false);
+    fetchClients({ page, search: debouncedSearch, startDate, endDate });
   };
 
   const handleExport = async (format: 'excel' | 'pdf') => {
     const blob = await exportClients(format, { search: debouncedSearch, startDate, endDate });
     if (blob) {
-      const filename = `clientes.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+      const filename = `socios_nexocaja.${format === 'excel' ? 'xlsx' : 'pdf'}`;
       const contentType = format === 'excel' 
         ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         : 'application/pdf';
@@ -81,20 +77,26 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            Gestión de Clientes
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
+            Directorio de Socios
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Registra y administra los clientes de la caja comunitaria.
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+            Registro, expedientes integrales y estados de los socios de la caja comunitaria.
           </p>
         </div>
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Nuevo Cliente
+        <Button
+          onClick={handleCreate}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-9 px-4 gap-1.5 shadow-xs"
+        >
+          <UserPlus className="w-4 h-4" />
+          Registrar Socio
         </Button>
       </div>
 
+      {/* Toolbar */}
       <TableToolbar
         search={search}
         onSearchChange={setSearch}
@@ -102,21 +104,21 @@ export default function ClientsPage() {
         onStartDateChange={setStartDate}
         endDate={endDate}
         onEndDateChange={setEndDate}
-        placeholder="Buscar clientes por nombre o identificación..."
+        placeholder="Buscar por cédula, código (SOC-), apellidos o nombres..."
         onExportExcel={() => handleExport('excel')}
         onExportPdf={() => handleExport('pdf')}
         isExporting={isLoading}
       />
 
       {error && (
-        <div className="bg-red-50 text-red-500 p-4 rounded-md border border-red-200">
+        <div className="bg-rose-50 text-rose-600 p-4 rounded-xl border border-rose-200 text-xs">
           {error}
         </div>
       )}
 
       {isLoading && !clients.length ? (
-        <div className="text-center text-zinc-500 py-10">
-          Cargando clientes...
+        <div className="text-center text-slate-400 py-12 text-xs">
+          Cargando socios...
         </div>
       ) : (
         <ClientsTable
@@ -128,69 +130,14 @@ export default function ClientsPage() {
         />
       )}
 
-      <ClientFormDialog
-        open={isFormOpen}
-        onOpenChange={setIsFormOpen}
+      {/* 4-Step Wizard Modal */}
+      <ClientWizardDialog
+        open={isWizardOpen}
+        onOpenChange={setIsWizardOpen}
         client={selectedClient}
-        onSubmit={handleFormSubmit}
+        onSubmit={handleWizardSubmit}
         isLoading={isLoading}
       />
-
-      {/* Client Detail Dialog */}
-      <Dialog open={!!viewClient} onOpenChange={() => setViewClient(null)}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Detalle del Cliente</DialogTitle>
-          </DialogHeader>
-          {viewClient && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-zinc-500">Nombre Completo</p>
-                  <p className="font-medium">{viewClient.lastName} {viewClient.firstName}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-zinc-500">Estado</p>
-                  <StatusBadge status={viewClient.status} />
-                </div>
-                <div>
-                  <p className="text-sm text-zinc-500">Identificación</p>
-                  <p className="font-medium">{viewClient.identificationType}: {viewClient.identificationNumber}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-zinc-500">Teléfono</p>
-                  <p className="font-medium">{viewClient.phone || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-zinc-500">Email</p>
-                  <p className="font-medium">{viewClient.email || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-zinc-500">Dirección</p>
-                  <p className="font-medium">{viewClient.address || '—'}</p>
-                </div>
-              </div>
-
-              {viewClient.accounts && viewClient.accounts.length > 0 && (
-                <div>
-                  <p className="text-sm text-zinc-500 mb-2">Cuentas ({viewClient.accounts.length})</p>
-                  <div className="space-y-2">
-                    {viewClient.accounts.map((acc) => (
-                      <div key={acc.id} className="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-800 rounded-md">
-                        <div>
-                          <p className="font-mono text-sm">{acc.accountNumber}</p>
-                          <StatusBadge status={acc.status} />
-                        </div>
-                        <p className="font-bold text-lg">${Number(acc.balance).toFixed(2)}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

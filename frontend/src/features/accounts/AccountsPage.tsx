@@ -2,43 +2,26 @@ import { useEffect, useState } from 'react';
 import { useAccounts } from './hooks/useAccounts';
 import type { Account } from '@/types';
 import { AccountsTable } from './components/AccountsTable';
+import { AccountOpenDialog } from './components/AccountOpenDialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { TableToolbar } from '@/components/shared/TableToolbar';
 import { useDebounce } from '@/hooks/useDebounce';
 import { downloadFile } from '@/lib/utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 
 export default function AccountsPage() {
   const {
     accounts,
     pagination,
-    clients,
     isLoading,
     error,
     fetchAccounts,
-    fetchClients,
-    createAccount,
     toggleStatus,
     exportAccounts,
   } = useAccounts();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState('');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -52,25 +35,11 @@ export default function AccountsPage() {
 
   useEffect(() => {
     fetchAccounts({ page, search: debouncedSearch, startDate, endDate });
-    fetchClients();
-  }, [fetchAccounts, fetchClients, page, debouncedSearch, startDate, endDate]);
+  }, [fetchAccounts, page, debouncedSearch, startDate, endDate]);
 
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, startDate, endDate]);
-
-  const handleCreate = () => {
-    setSelectedClientId('');
-    setIsCreateOpen(true);
-  };
-
-  const handleCreateSubmit = async () => {
-    if (!selectedClientId) return;
-    const success = await createAccount(selectedClientId);
-    if (success) {
-      setIsCreateOpen(false);
-    }
-  };
 
   const handleToggleStatus = (account: Account) => {
     setConfirmDialog({ open: true, account });
@@ -86,7 +55,7 @@ export default function AccountsPage() {
   const handleExport = async (format: 'excel' | 'pdf') => {
     const blob = await exportAccounts(format, { search: debouncedSearch, startDate, endDate });
     if (blob) {
-      const filename = `cuentas.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+      const filename = `cuentas_nexocaja.${format === 'excel' ? 'xlsx' : 'pdf'}`;
       const contentType = format === 'excel' 
         ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         : 'application/pdf';
@@ -96,17 +65,21 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            Gestión de Cuentas
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
+            Cuentas y Libretas Financieras
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Administra las cuentas de ahorro de los clientes.
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+            Administración de libretas de ahorro, cuentas por producto y estados financieros.
           </p>
         </div>
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Abrir Cuenta
+        <Button
+          onClick={() => setIsCreateOpen(true)}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-9 px-4 gap-1.5 shadow-xs"
+        >
+          <Plus className="w-4 h-4" /> Apertura de Cuenta
         </Button>
       </div>
 
@@ -117,20 +90,20 @@ export default function AccountsPage() {
         onStartDateChange={setStartDate}
         endDate={endDate}
         onEndDateChange={setEndDate}
-        placeholder="Buscar cuentas por cliente o número..."
+        placeholder="Buscar por número de cuenta, cédula o nombres del socio..."
         onExportExcel={() => handleExport('excel')}
         onExportPdf={() => handleExport('pdf')}
         isExporting={isLoading}
       />
 
       {error && (
-        <div className="bg-red-50 text-red-500 p-4 rounded-md border border-red-200">
+        <div className="bg-rose-50 text-rose-600 p-4 rounded-xl border border-rose-200 text-xs">
           {error}
         </div>
       )}
 
       {isLoading && !accounts.length ? (
-        <div className="text-center text-zinc-500 py-10">
+        <div className="text-center text-slate-400 py-12 text-xs">
           Cargando cuentas...
         </div>
       ) : (
@@ -142,53 +115,22 @@ export default function AccountsPage() {
         />
       )}
 
-      {/* Create Account Dialog */}
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>Abrir Nueva Cuenta</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label>Cliente</Label>
-              <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.lastName} {client.firstName} — {client.identificationNumber}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreateSubmit} disabled={!selectedClientId || isLoading}>
-                {isLoading ? 'Creando...' : 'Abrir Cuenta'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Decoupled Account Open Dialog */}
+      <AccountOpenDialog
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        onSuccess={() => {
+          fetchAccounts({ page, search: debouncedSearch, startDate, endDate });
+        }}
+      />
 
-      {/* Confirm Toggle Status Dialog */}
       <ConfirmDialog
         open={confirmDialog.open}
-        onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
-        title={confirmDialog.account?.status === 'ACTIVE' ? 'Desactivar Cuenta' : 'Activar Cuenta'}
-        description={
-          confirmDialog.account?.status === 'ACTIVE'
-            ? `¿Estás seguro de desactivar la cuenta ${confirmDialog.account?.accountNumber}?`
-            : `¿Deseas reactivar la cuenta ${confirmDialog.account?.accountNumber}?`
-        }
-        confirmLabel={confirmDialog.account?.status === 'ACTIVE' ? 'Desactivar' : 'Activar'}
-        variant={confirmDialog.account?.status === 'ACTIVE' ? 'destructive' : 'default'}
-        isLoading={isLoading}
+        onOpenChange={(open) => setConfirmDialog({ open, account: null })}
+        title={confirmDialog.account?.status === 'ACTIVE' ? 'Bloquear Cuenta' : 'Reactivar Cuenta'}
+        description={`¿Está seguro de que desea ${
+          confirmDialog.account?.status === 'ACTIVE' ? 'bloquear' : 'reactivar'
+        } la cuenta ${confirmDialog.account?.accountNumber}?`}
         onConfirm={handleConfirmToggle}
       />
     </div>

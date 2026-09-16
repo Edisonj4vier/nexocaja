@@ -193,7 +193,7 @@ export default function ModulesHubPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => handleNavigate('CAJAS', '/app/cash-register')}
+              onClick={() => handleNavigate('CAJAS', '/app/movements')}
               className="border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs h-9 px-3.5 gap-1.5 font-medium rounded-lg"
             >
               <ArrowRightLeft className="w-4 h-4 text-emerald-600" />

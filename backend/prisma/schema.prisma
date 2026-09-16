@@ -57,49 +57,157 @@ model User {
 enum ClientStatus {
   ACTIVE
   INACTIVE
+  BLOCKED
+  SUSPENDED
+}
+
+enum PersonType {
+  NATURAL
+  LEGAL
 }
 
 model Client {
   id                   String       @id @default(uuid())
+  personType           PersonType   @default(NATURAL) @map("person_type")
+  memberCode           String?      @unique @map("member_code")
   identificationType   String       @map("identification_type")
   identificationNumber String       @unique @map("identification_number")
   firstName            String       @map("first_name")
   lastName             String       @map("last_name")
   phone                String?
+  secondaryPhone       String?      @map("secondary_phone")
   email                String?
   address              String?
+  province             String?
+  city                 String?
+  parish               String?
+  addressReference     String?      @map("address_reference")
   birthDate            DateTime?    @map("birth_date")
+  gender               String?
+  maritalStatus        String?      @map("marital_status")
+  nationality          String?      @default("Ecuatoriana")
+  
+  // Socioeconomic
+  occupation           String?
+  profession           String?
+  employerCompany      String?      @map("employer_company")
+  monthlyIncome        Decimal?     @map("monthly_income") @db.Decimal(12, 2)
+  economicActivity     String?      @map("economic_activity")
+  workAddress          String?      @map("work_address")
+
+  // Emergency contact / Reference
+  emergencyContactName         String? @map("emergency_contact_name")
+  emergencyContactRelationship String? @map("emergency_contact_relationship")
+  emergencyContactPhone        String? @map("emergency_contact_phone")
+
+  // Member info
+  memberType           String       @default("ACTIVO") @map("member_type")
+  affiliationDate      DateTime     @default(now()) @map("affiliation_date")
+  totalContributions   Decimal      @default(0) @map("total_contributions") @db.Decimal(12, 2)
+  agency               String?      @default("Matriz")
+
+  // Status and audit
   status               ClientStatus @default(ACTIVE)
+  statusReason         String?      @map("status_reason")
+  statusChangedAt      DateTime?    @map("status_changed_at")
+  statusChangedBy      String?      @map("status_changed_by")
+
   createdAt            DateTime     @default(now()) @map("created_at")
   updatedAt            DateTime     @updatedAt @map("updated_at")
 
   accounts             Account[]
 
   @@index([identificationNumber])
+  @@index([memberCode])
   @@map("clients")
+}
+
+enum ProductType {
+  SAVINGS
+  PROGRAMMED_SAVINGS
+  TERM_DEPOSIT
+  CONTRIBUTION
+}
+
+model FinancialProduct {
+  id                  String      @id @default(uuid())
+  code                String      @unique
+  name                String
+  type                ProductType @default(SAVINGS)
+  interestRate        Decimal     @default(0) @map("interest_rate") @db.Decimal(5, 2)
+  interestPeriodicity String      @default("MENSUAL") @map("interest_periodicity")
+  minOpeningAmount    Decimal     @default(0) @map("min_opening_amount") @db.Decimal(12, 2)
+  minBalance          Decimal     @default(0) @map("min_balance") @db.Decimal(12, 2)
+  
+  // Accounting configuration
+  accountingAccount   String?     @map("accounting_account")
+  accountingInterest  String?     @map("accounting_interest")
+  accountingCash      String?     @map("accounting_cash")
+
+  status              String      @default("ACTIVE")
+
+  accounts            Account[]
+
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  @@map("financial_products")
 }
 
 enum AccountStatus {
   ACTIVE
+  BLOCKED
   INACTIVE
+  CLOSED
+  FROZEN
 }
 
 model Account {
-  id            String        @id @default(uuid())
-  accountNumber String        @unique @map("account_number")
-  clientId      String        @map("client_id")
-  client        Client        @relation(fields: [clientId], references: [id])
-  balance       Decimal       @default(0) @db.Decimal(12, 2)
-  status        AccountStatus @default(ACTIVE)
-  openedAt      DateTime      @default(now()) @map("opened_at")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
+  id            String            @id @default(uuid())
+  accountNumber String            @unique @map("account_number")
+  clientId      String            @map("client_id")
+  client        Client            @relation(fields: [clientId], references: [id])
+  
+  productId     String?           @map("product_id")
+  product       FinancialProduct? @relation(fields: [productId], references: [id])
+
+  currency      String            @default("USD")
+  openingAmount Decimal           @default(0) @map("opening_amount") @db.Decimal(12, 2)
+  interestRate  Decimal           @default(0) @map("interest_rate") @db.Decimal(5, 2)
+  agency        String?           @default("Matriz")
+
+  balance       Decimal           @default(0) @db.Decimal(12, 2)
+  status        AccountStatus     @default(ACTIVE)
+  statusReason  String?           @map("status_reason")
+  openedAt      DateTime          @default(now()) @map("opened_at")
+  closedAt      DateTime?         @map("closed_at")
+
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
 
   movements     Movement[]
+  beneficiaries Beneficiary[]
 
   @@index([clientId])
   @@index([accountNumber])
+  @@index([productId])
   @@map("accounts")
+}
+
+model Beneficiary {
+  id                   String   @id @default(uuid())
+  accountId            String   @map("account_id")
+  account              Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  fullName             String   @map("full_name")
+  identificationNumber String?  @map("identification_number")
+  relationship         String
+  percentage           Decimal  @db.Decimal(5, 2)
+
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@index([accountId])
+  @@map("beneficiaries")
 }
 
 enum CashRegisterStatus {

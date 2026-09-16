@@ -11,6 +11,7 @@ import { MovementsModule } from './modules/movements/movements.module';
 import { ExportModule } from './modules/export/export.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { FinancialProductsModule } from './modules/financial-products/financial-products.module';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -29,6 +30,7 @@ import { APP_GUARD } from '@nestjs/core';
     UsersModule,
     RolesModule,
     ClientsModule,
+    FinancialProductsModule,
     AccountsModule,
     CashRegistersModule,
     MovementsModule,

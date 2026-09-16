@@ -9,7 +9,7 @@ import {
   UseGuards,
   Res,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ClientsService } from '../services/clients.service';
 import { CreateClientDto } from '../dto/create-client.dto';
@@ -58,6 +58,12 @@ export class ClientsController {
       'Content-Length': buffer.length,
     });
     res.send(buffer);
+  }
+
+  @Roles('ADMIN', 'CASHIER')
+  @Get(':id/360')
+  findOne360(@Param('id') id: string) {
+    return this.clientsService.findOne360(id);
   }
 
   @Roles('ADMIN', 'CASHIER')

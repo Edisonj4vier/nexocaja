@@ -1,6 +1,7 @@
-import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo } from 'react';
+import { Outlet, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
-import { useUiStore } from '@/stores/ui.store';
+import { useUiStore, type ModuleType } from '@/stores/ui.store';
 import { Button } from '@/components/ui/button';
 import { LogOut, Home, Users, UserCheck, Wallet, Landmark, ArrowRightLeft, FileText, Grid, ArrowLeft } from 'lucide-react';
 
@@ -8,6 +9,7 @@ export default function MainLayout() {
   const { user, logout } = useAuthStore();
   const { activeModule, setActiveModule } = useUiStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -18,8 +20,28 @@ export default function MainLayout() {
     navigate('/');
   };
 
-  // If no active module is selected, redirect to hub
-  if (!activeModule) {
+  // Automatically determine module from current URL path
+  const currentPathModule: ModuleType = useMemo(() => {
+    const path = location.pathname;
+    if (path.startsWith('/app/clients') || path.startsWith('/app/accounts')) return 'ATENCION_CLIENTE';
+    if (path.startsWith('/app/cash-register') || path.startsWith('/app/movements')) return 'CAJAS';
+    if (path.startsWith('/app/users')) return 'ADMINISTRACION';
+    if (path.startsWith('/app/reports')) return 'REPORTES';
+    if (path.startsWith('/app/dashboard')) return 'DASHBOARD';
+    return null;
+  }, [location.pathname]);
+
+  // Sync module state when navigating across modules
+  useEffect(() => {
+    if (currentPathModule && currentPathModule !== activeModule) {
+      setActiveModule(currentPathModule);
+    }
+  }, [currentPathModule, activeModule, setActiveModule]);
+
+  const effectiveModule = activeModule || currentPathModule;
+
+  // If no module can be determined, redirect to hub
+  if (!effectiveModule) {
     return <Navigate to="/" replace />;
   }
 
@@ -37,7 +59,7 @@ export default function MainLayout() {
     { name: 'Caja', icon: Landmark, path: '/app/cash-register', module: 'CAJAS', allowed: true },
     { name: 'Movimientos', icon: ArrowRightLeft, path: '/app/movements', module: 'CAJAS', allowed: true },
     { name: 'Reportes', icon: FileText, path: '/app/reports', module: 'REPORTES', allowed: true },
-  ].filter((item) => item.allowed && item.module === activeModule);
+  ].filter((item) => item.allowed && item.module === effectiveModule);
 
   // Module names for UI
   const moduleNames: Record<string, string> = {
@@ -58,7 +80,7 @@ export default function MainLayout() {
           </Button>
           <div className="flex-1 overflow-hidden">
             <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 truncate">
-              {moduleNames[activeModule]}
+              {moduleNames[effectiveModule]}
             </h1>
           </div>
         </div>

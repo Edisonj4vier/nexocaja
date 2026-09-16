@@ -5,7 +5,9 @@ import DashboardPage from '@/features/dashboard/DashboardPage';
 import ModulesHubPage from '@/features/dashboard/ModulesHubPage';
 import UsersPage from '@/features/users/UsersPage';
 import ClientsPage from '@/features/clients/ClientsPage';
+import ClientProfilePage from '@/features/clients/ClientProfilePage';
 import AccountsPage from '@/features/accounts/AccountsPage';
+import AccountDetailPage from '@/features/accounts/AccountDetailPage';
 import CashRegisterPage from '@/features/cash-register/CashRegisterPage';
 import MovementsPage from '@/features/movements/MovementsPage';
 import ReportsPage from '@/features/reports/ReportsPage';
@@ -63,7 +65,9 @@ export default function AppRoutes() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="clients" element={<ClientsPage />} />
+        <Route path="clients/:id" element={<ClientProfilePage />} />
         <Route path="accounts" element={<AccountsPage />} />
+        <Route path="accounts/:id" element={<AccountDetailPage />} />
         <Route path="cash-register" element={<CashRegisterPage />} />
         <Route path="movements" element={<MovementsPage />} />
         <Route path="reports" element={<ReportsPage />} />
