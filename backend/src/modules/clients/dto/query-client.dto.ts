@@ -34,4 +34,14 @@ export class QueryClientDto {
   @IsString()
   @IsOptional()
   identificationNumber?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  startDate?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  endDate?: string;
 }

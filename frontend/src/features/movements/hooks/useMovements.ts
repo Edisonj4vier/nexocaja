@@ -14,7 +14,7 @@ export const useMovements = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMovements = useCallback(async (params?: Record<string, string>) => {
+  const fetchMovements = useCallback(async (params?: Record<string, any>) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -69,6 +69,22 @@ export const useMovements = () => {
     }
   };
 
+  const exportMovements = async (format: 'excel' | 'pdf', params?: Record<string, any>) => {
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/movements/export/${format}`, {
+        params,
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (err: any) {
+      setError('Error al exportar movimientos');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     movements,
     pagination,
@@ -77,5 +93,6 @@ export const useMovements = () => {
     fetchMovements,
     deposit,
     withdrawal,
+    exportMovements,
   };
 };

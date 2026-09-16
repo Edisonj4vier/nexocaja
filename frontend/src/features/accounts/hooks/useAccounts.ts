@@ -80,6 +80,22 @@ export const useAccounts = () => {
     }
   };
 
+  const exportAccounts = async (format: 'excel' | 'pdf', params?: Record<string, any>) => {
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/accounts/export/${format}`, {
+        params,
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (err: any) {
+      setError('Error al exportar cuentas');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     accounts,
     pagination,
@@ -90,5 +106,6 @@ export const useAccounts = () => {
     fetchClients,
     createAccount,
     toggleStatus,
+    exportAccounts,
   };
 };

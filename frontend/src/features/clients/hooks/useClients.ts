@@ -69,6 +69,22 @@ export const useClients = () => {
     }
   };
 
+  const exportClients = async (format: 'excel' | 'pdf', params?: Record<string, any>) => {
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/clients/export/${format}`, {
+        params,
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (err: any) {
+      setError('Error al exportar clientes');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     clients,
     pagination,
@@ -77,5 +93,6 @@ export const useClients = () => {
     fetchClients,
     createClient,
     updateClient,
+    exportClients,
   };
 };

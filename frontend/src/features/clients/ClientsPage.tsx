@@ -1,11 +1,13 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useClients } from './hooks/useClients';
 import type { Client } from '@/types';
 import { ClientsTable } from './components/ClientsTable';
 import { ClientFormDialog } from './components/ClientFormDialog';
 import { Button } from '@/components/ui/button';
-import { SearchInput } from '@/components/shared/SearchInput';
 import { Plus } from 'lucide-react';
+import { TableToolbar } from '@/components/shared/TableToolbar';
+import { useDebounce } from '@/hooks/useDebounce';
+import { downloadFile } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -23,24 +25,26 @@ export default function ClientsPage() {
     fetchClients,
     createClient,
     updateClient,
+    exportClients,
   } = useClients();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [viewClient, setViewClient] = useState<Client | null>(null);
   const [page, setPage] = useState(1);
-  const [searchValue, setSearchValue] = useState<string>('');
+  const [search, setSearch] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  
+  const debouncedSearch = useDebounce(search, 500);
 
   useEffect(() => {
-    const params: Record<string, any> = { page };
-    if (searchValue) params.search = searchValue;
-    fetchClients(params);
-  }, [fetchClients, page, searchValue]);
+    fetchClients({ page, search: debouncedSearch, startDate, endDate });
+  }, [fetchClients, page, debouncedSearch, startDate, endDate]);
 
-  const handleSearch = useCallback((value: string) => {
-    setSearchValue(value);
-    setPage(1); // Reset page on search
-  }, []);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, startDate, endDate]);
 
   const handleCreate = () => {
     setSelectedClient(null);
@@ -64,6 +68,17 @@ export default function ClientsPage() {
     }
   };
 
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    const blob = await exportClients(format, { search: debouncedSearch, startDate, endDate });
+    if (blob) {
+      const filename = `clientes.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+      const contentType = format === 'excel' 
+        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        : 'application/pdf';
+      downloadFile(blob, filename, contentType);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -80,10 +95,17 @@ export default function ClientsPage() {
         </Button>
       </div>
 
-      <SearchInput
-        placeholder="Buscar por nombre o identificación..."
-        onSearch={handleSearch}
-        className="max-w-sm"
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
+        placeholder="Buscar clientes por nombre o identificación..."
+        onExportExcel={() => handleExport('excel')}
+        onExportPdf={() => handleExport('pdf')}
+        isExporting={isLoading}
       />
 
       {error && (

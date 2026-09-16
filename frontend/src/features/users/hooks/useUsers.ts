@@ -107,6 +107,22 @@ export const useUsers = () => {
     }
   };
 
+  const exportUsers = async (format: 'excel' | 'pdf', params?: Record<string, any>) => {
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/users/export/${format}`, {
+        params,
+        responseType: 'blob', // Important for file download
+      });
+      return response.data;
+    } catch (err: any) {
+      setError('Error al exportar usuarios');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     users,
     pagination,
@@ -118,6 +134,7 @@ export const useUsers = () => {
     createUser,
     updateUser,
     toggleStatus,
+    exportUsers,
     clearError: () => setError(null),
   };
 };

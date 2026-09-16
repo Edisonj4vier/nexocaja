@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { MovementsService } from '../services/movements.service';
 import { CreateMovementDto } from '../dto/create-movement.dto';
@@ -34,5 +35,27 @@ export class MovementsController {
   @Get()
   findAll(@Query() query: QueryMovementDto) {
     return this.movementsService.findAll(query);
+  }
+
+  @Get('export/excel')
+  async exportExcel(@Query() query: QueryMovementDto, @Res() res: Response) {
+    const buffer = await this.movementsService.export(query, 'excel');
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename=movimientos.xlsx',
+      'Content-Length': buffer.length,
+    });
+    res.send(buffer);
+  }
+
+  @Get('export/pdf')
+  async exportPdf(@Query() query: QueryMovementDto, @Res() res: Response) {
+    const buffer = await this.movementsService.export(query, 'pdf');
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename=movimientos.pdf',
+      'Content-Length': buffer.length,
+    });
+    res.send(buffer);
   }
 }

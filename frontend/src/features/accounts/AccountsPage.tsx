@@ -5,6 +5,9 @@ import { AccountsTable } from './components/AccountsTable';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { TableToolbar } from '@/components/shared/TableToolbar';
+import { useDebounce } from '@/hooks/useDebounce';
+import { downloadFile } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -31,20 +34,30 @@ export default function AccountsPage() {
     fetchClients,
     createAccount,
     toggleStatus,
+    exportAccounts,
   } = useAccounts();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState('');
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  
+  const debouncedSearch = useDebounce(search, 500);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     account: Account | null;
   }>({ open: false, account: null });
 
   useEffect(() => {
-    fetchAccounts({ page });
+    fetchAccounts({ page, search: debouncedSearch, startDate, endDate });
     fetchClients();
-  }, [fetchAccounts, fetchClients, page]);
+  }, [fetchAccounts, fetchClients, page, debouncedSearch, startDate, endDate]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, startDate, endDate]);
 
   const handleCreate = () => {
     setSelectedClientId('');
@@ -70,6 +83,17 @@ export default function AccountsPage() {
     }
   };
 
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    const blob = await exportAccounts(format, { search: debouncedSearch, startDate, endDate });
+    if (blob) {
+      const filename = `cuentas.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+      const contentType = format === 'excel' 
+        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        : 'application/pdf';
+      downloadFile(blob, filename, contentType);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -85,6 +109,19 @@ export default function AccountsPage() {
           <Plus className="mr-2 h-4 w-4" /> Abrir Cuenta
         </Button>
       </div>
+
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
+        placeholder="Buscar cuentas por cliente o número..."
+        onExportExcel={() => handleExport('excel')}
+        onExportPdf={() => handleExport('pdf')}
+        isExporting={isLoading}
+      />
 
       {error && (
         <div className="bg-red-50 text-red-500 p-4 rounded-md border border-red-200">

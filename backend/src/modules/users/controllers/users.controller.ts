@@ -7,7 +7,9 @@ import {
   Param,
   Query,
   UseGuards,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { UsersService } from '../services/users.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
@@ -33,6 +35,28 @@ export class UsersController {
   @Get()
   findAll(@Query() query: QueryUserDto) {
     return this.usersService.findAll(query);
+  }
+
+  @Get('export/excel')
+  async exportExcel(@Query() query: QueryUserDto, @Res() res: Response) {
+    const buffer = await this.usersService.export(query, 'excel');
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename=usuarios.xlsx',
+      'Content-Length': buffer.length,
+    });
+    res.send(buffer);
+  }
+
+  @Get('export/pdf')
+  async exportPdf(@Query() query: QueryUserDto, @Res() res: Response) {
+    const buffer = await this.usersService.export(query, 'pdf');
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename=usuarios.pdf',
+      'Content-Length': buffer.length,
+    });
+    res.send(buffer);
   }
 
   @Get(':id')

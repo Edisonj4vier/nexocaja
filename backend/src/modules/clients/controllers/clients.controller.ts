@@ -7,7 +7,9 @@ import {
   Param,
   Query,
   UseGuards,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ClientsService } from '../services/clients.service';
 import { CreateClientDto } from '../dto/create-client.dto';
@@ -34,6 +36,28 @@ export class ClientsController {
   @Get()
   findAll(@Query() query: QueryClientDto) {
     return this.clientsService.findAll(query);
+  }
+
+  @Get('export/excel')
+  async exportExcel(@Query() query: QueryClientDto, @Res() res: Response) {
+    const buffer = await this.clientsService.export(query, 'excel');
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename=clientes.xlsx',
+      'Content-Length': buffer.length,
+    });
+    res.send(buffer);
+  }
+
+  @Get('export/pdf')
+  async exportPdf(@Query() query: QueryClientDto, @Res() res: Response) {
+    const buffer = await this.clientsService.export(query, 'pdf');
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename=clientes.pdf',
+      'Content-Length': buffer.length,
+    });
+    res.send(buffer);
   }
 
   @Roles('ADMIN', 'CASHIER')

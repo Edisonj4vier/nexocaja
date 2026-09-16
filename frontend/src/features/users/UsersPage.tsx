@@ -6,6 +6,9 @@ import { UserFormDialog } from './components/UserFormDialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
+import { TableToolbar } from '@/components/shared/TableToolbar';
+import { useDebounce } from '@/hooks/useDebounce';
+import { downloadFile } from '@/lib/utils';
 
 export default function UsersPage() {
   const currentUser = useAuthStore((state) => state.user);
@@ -22,16 +25,27 @@ export default function UsersPage() {
     updateUser,
     toggleStatus,
     clearError,
+    exportUsers,
   } = useUsers();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  
+  const debouncedSearch = useDebounce(search, 500);
 
   useEffect(() => {
     fetchRoles();
-    fetchUsers({ page });
-  }, [fetchRoles, fetchUsers, page]);
+    fetchUsers({ page, search: debouncedSearch, startDate, endDate });
+  }, [fetchRoles, fetchUsers, page, debouncedSearch, startDate, endDate]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, startDate, endDate]);
 
   const handleCreate = () => {
     clearError();
@@ -65,6 +79,17 @@ export default function UsersPage() {
     }
   };
 
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    const blob = await exportUsers(format, { search: debouncedSearch, startDate, endDate });
+    if (blob) {
+      const filename = `usuarios.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+      const contentType = format === 'excel' 
+        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        : 'application/pdf';
+      downloadFile(blob, filename, contentType);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -80,6 +105,19 @@ export default function UsersPage() {
           <Plus className="mr-2 h-4 w-4" /> Nuevo Usuario
         </Button>
       </div>
+
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
+        placeholder="Buscar por nombre o correo..."
+        onExportExcel={() => handleExport('excel')}
+        onExportPdf={() => handleExport('pdf')}
+        isExporting={isLoading}
+      />
 
       {error && (
         <div className="bg-red-50 text-red-500 p-4 rounded-md border border-red-200">

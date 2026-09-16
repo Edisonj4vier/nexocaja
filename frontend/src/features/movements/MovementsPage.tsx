@@ -28,6 +28,9 @@ import {
 } from '@/components/ui/select';
 import { ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { TransactionFormDialog } from './components/TransactionFormDialog';
+import { TableToolbar } from '@/components/shared/TableToolbar';
+import { useDebounce } from '@/hooks/useDebounce';
+import { downloadFile } from '@/lib/utils';
 
 export default function MovementsPage() {
   const {
@@ -38,23 +41,47 @@ export default function MovementsPage() {
     fetchMovements,
     deposit,
     withdrawal,
+    exportMovements,
   } = useMovements();
 
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
   const [filterType, setFilterType] = useState<string>('ALL');
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  
+  const debouncedSearch = useDebounce(search, 500);
 
   useEffect(() => {
-    const params: Record<string, any> = { page };
+    const params: Record<string, any> = { page, search: debouncedSearch, startDate, endDate };
     if (filterType !== 'ALL') params.type = filterType;
     fetchMovements(params);
-  }, [fetchMovements, page, filterType]);
+  }, [fetchMovements, page, filterType, debouncedSearch, startDate, endDate]);
 
   const handleFilterChange = useCallback((type: string) => {
     setFilterType(type);
     setPage(1); // Reset to page 1 when filter changes
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, startDate, endDate]);
+
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    const params: Record<string, any> = { search: debouncedSearch, startDate, endDate };
+    if (filterType !== 'ALL') params.type = filterType;
+
+    const blob = await exportMovements(format, params);
+    if (blob) {
+      const filename = `movimientos.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+      const contentType = format === 'excel' 
+        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        : 'application/pdf';
+      downloadFile(blob, filename, contentType);
+    }
+  };
 
   const columns: ColumnDef<Movement>[] = [
     {
@@ -187,19 +214,34 @@ export default function MovementsPage() {
         </div>
       </div>
 
-      {/* Filter */}
-      <div className="flex items-center gap-3">
-        <Label className="text-sm text-zinc-500">Filtrar por:</Label>
-        <Select value={filterType} onValueChange={handleFilterChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">Todos</SelectItem>
-            <SelectItem value="DEPOSIT">Depósitos</SelectItem>
-            <SelectItem value="WITHDRAWAL">Retiros</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Filter and Toolbar */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <Label className="text-sm text-zinc-500">Filtrar por:</Label>
+          <Select value={filterType} onValueChange={handleFilterChange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todos</SelectItem>
+              <SelectItem value="DEPOSIT">Depósitos</SelectItem>
+              <SelectItem value="WITHDRAWAL">Retiros</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <TableToolbar
+          search={search}
+          onSearchChange={setSearch}
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
+          placeholder="Buscar por usuario, cajero o N° de cuenta..."
+          onExportExcel={() => handleExport('excel')}
+          onExportPdf={() => handleExport('pdf')}
+          isExporting={isLoading}
+        />
       </div>
 
       {error && (
