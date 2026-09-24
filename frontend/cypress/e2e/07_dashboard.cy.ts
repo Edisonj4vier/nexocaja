@@ -1,7 +1,7 @@
 describe('7. Dashboard en Tiempo Real', () => {
   beforeEach(() => {
     cy.loginAsAdmin();
-    cy.visit('/');
+    cy.visit('/app/dashboard');
   });
 
   it('7.1 — Cargar tarjetas de KPIs financieros', () => {

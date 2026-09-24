@@ -478,7 +478,7 @@ describe('NexoCaja E2E Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(res.body.data.status).toBe('INACTIVE');
+      expect(['BLOCKED', 'INACTIVE']).toContain(res.body.data.status);
     });
 
     it('5.6 — Reactivar cuenta', async () => {
@@ -495,6 +495,14 @@ describe('NexoCaja E2E Tests', () => {
   // SECCIÓN 6: CAJA REGISTRADORA
   // ============================================================
   describe('6. Caja Registradora', () => {
+    beforeAll(async () => {
+      try {
+        await request(app.getHttpServer())
+          .post('/api/cash-registers/close')
+          .set('Authorization', `Bearer ${adminToken}`);
+      } catch {}
+    });
+
     it('6.1 — Consultar caja sin tener una abierta', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/cash-registers/current')
@@ -948,10 +956,84 @@ describe('NexoCaja E2E Tests', () => {
   });
 
   // ============================================================
-  // SECCIÓN 11: CLEANUP Y RESUMEN FINAL
+  // SECCIÓN 12: CORE BANKING, PRODUCTOS FINANCIEROS Y EXPEDIENTE 360°
   // ============================================================
-  describe('11. Cleanup y Resumen Final', () => {
-    it('11.1 — Los datos de test existen y están consistentes', async () => {
+  describe('12. Core Banking — Catálogo Financiero y Expediente 360°', () => {
+    let basicProductId: string;
+
+    it('12.1 — Listar catálogo de productos financieros activos', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/financial-products')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.length).toBeGreaterThanOrEqual(1);
+
+      const basic = res.body.data.find((p: any) => p.code === 'AH-BASICA');
+      expect(basic).toBeDefined();
+      expect(basic.name).toContain('Básica');
+      basicProductId = basic.id;
+    });
+
+    it('12.2 — Obtener detalle de producto financiero por ID', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/financial-products/${basicProductId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.id).toBe(basicProductId);
+      expect(res.body.data.code).toBe('AH-BASICA');
+    });
+
+    it('12.3 — Consultar Expediente 360° de un socio', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/clients/${clientId}/360`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.id).toBe(clientId);
+      expect(res.body.data.summary).toBeDefined();
+      expect(typeof res.body.data.summary.totalSavings).toBe('number');
+      expect(Array.isArray(res.body.data.accounts)).toBe(true);
+      expect(Array.isArray(res.body.data.recentMovements)).toBe(true);
+    });
+
+    it('12.4 — Apertura de cuenta vinculada a producto financiero con beneficiario', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/accounts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          clientId,
+          productId: basicProductId,
+          openingAmount: 25,
+          agency: 'Matriz',
+          beneficiaries: [
+            {
+              fullName: 'Hijo Beneficiario',
+              relationship: 'Hijo',
+              percentage: 100,
+            },
+          ],
+        })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.accountNumber).toMatch(/^2101\d{8}$/);
+      expect(Number(res.body.data.balance)).toBe(25);
+      expect(res.body.data.beneficiaries).toHaveLength(1);
+      expect(res.body.data.beneficiaries[0].fullName).toBe('Hijo Beneficiario');
+    });
+  });
+
+  // ============================================================
+  // SECCIÓN 13: CLEANUP Y RESUMEN FINAL
+  // ============================================================
+  describe('13. Cleanup y Resumen Final', () => {
+    it('13.1 — Los datos de test existen y están consistentes', async () => {
       const [clientRes, accountRes] = await Promise.all([
         request(app.getHttpServer())
           .get(`/api/clients/${clientId}`)

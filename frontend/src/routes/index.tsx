@@ -72,6 +72,16 @@ export default function AppRoutes() {
         <Route path="movements" element={<MovementsPage />} />
         <Route path="reports" element={<ReportsPage />} />
       </Route>
+
+      {/* Top-level compatibility redirects */}
+      <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
+      <Route path="/users" element={<Navigate to="/app/users" replace />} />
+      <Route path="/clients" element={<Navigate to="/app/clients" replace />} />
+      <Route path="/accounts" element={<Navigate to="/app/accounts" replace />} />
+      <Route path="/cash-register" element={<Navigate to="/app/cash-register" replace />} />
+      <Route path="/movements" element={<Navigate to="/app/movements" replace />} />
+      <Route path="/reports" element={<Navigate to="/app/reports" replace />} />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -51,11 +51,22 @@ export const useClients = () => {
     }
   }, []);
 
+  const sanitizePayload = (data: any) => {
+    const cleaned: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== '' && value !== null && value !== undefined) {
+        cleaned[key] = value;
+      }
+    }
+    return cleaned;
+  };
+
   const createClient = async (data: any) => {
     try {
       setIsLoading(true);
       setError(null);
-      await api.post('/clients', data);
+      const payload = sanitizePayload(data);
+      await api.post('/clients', payload);
       await fetchClients();
       return true;
     } catch (err: any) {
@@ -69,7 +80,8 @@ export const useClients = () => {
     try {
       setIsLoading(true);
       setError(null);
-      await api.patch(`/clients/${id}`, data);
+      const payload = sanitizePayload(data);
+      await api.patch(`/clients/${id}`, payload);
       await fetchClients();
       return true;
     } catch (err: any) {

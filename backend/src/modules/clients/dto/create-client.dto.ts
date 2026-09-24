@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { PersonType, ClientStatus } from '@prisma/client';
 
 export class CreateClientDto {
@@ -54,6 +55,7 @@ export class CreateClientDto {
   secondaryPhone?: string;
 
   @ApiPropertyOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsEmail()
   @IsOptional()
   email?: string;
@@ -84,6 +86,7 @@ export class CreateClientDto {
   addressReference?: string;
 
   @ApiPropertyOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsDateString()
   @IsOptional()
   birthDate?: string;
@@ -120,6 +123,7 @@ export class CreateClientDto {
   employerCompany?: string;
 
   @ApiPropertyOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
   @IsNumber()
   @IsOptional()
   monthlyIncome?: number;
@@ -157,11 +161,13 @@ export class CreateClientDto {
   memberType?: string;
 
   @ApiPropertyOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsDateString()
   @IsOptional()
   affiliationDate?: string;
 
   @ApiPropertyOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
   @IsNumber()
   @IsOptional()
   totalContributions?: number;

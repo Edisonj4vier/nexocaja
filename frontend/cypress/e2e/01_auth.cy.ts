@@ -27,8 +27,7 @@ describe('1. Autenticación y Control de Acceso', () => {
     cy.get('button[type="submit"]').click();
 
     cy.url().should('eq', `${Cypress.config().baseUrl}/`);
-    cy.contains('Dashboard').should('be.visible');
-    cy.contains('Bienvenido, Admin').should('be.visible');
+    cy.contains('NexoCaja').should('be.visible');
     cy.contains('ADMIN').should('be.visible');
   });
 

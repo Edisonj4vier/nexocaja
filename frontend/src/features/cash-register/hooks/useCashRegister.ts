@@ -36,8 +36,9 @@ export const useCashRegister = () => {
       return true;
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al abrir caja');
-      setIsLoading(false);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -52,8 +53,9 @@ export const useCashRegister = () => {
       return true;
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al cerrar caja');
-      setIsLoading(false);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 

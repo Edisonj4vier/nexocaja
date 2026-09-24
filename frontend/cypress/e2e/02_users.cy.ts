@@ -4,13 +4,14 @@ describe('2. Gestión de Usuarios y Roles', () => {
 
   beforeEach(() => {
     cy.loginAsAdmin();
-    cy.visit('/users');
+    cy.visit('/app/users');
   });
 
   it('2.1 — Listar usuarios existentes', () => {
     cy.contains('Gestión de Usuarios').should('be.visible');
     cy.get('table').should('be.visible');
-    cy.contains('admin@nexocaja.local').should('be.visible');
+    cy.get('input[placeholder*="Buscar"]').type('admin@nexocaja.local');
+    cy.contains('admin@nexocaja.local', { timeout: 8000 }).should('be.visible');
   });
 
   it('2.2 — Crear nuevo usuario Cajero', () => {
@@ -28,19 +29,18 @@ describe('2. Gestión de Usuarios y Roles', () => {
 
     cy.get('button').contains('Guardar').click();
 
-    // Verify cashier appears in table
+    // Verify cashier appears in table with formatted name
     cy.contains(testEmail, { timeout: 8000 }).should('be.visible');
-    cy.contains('Lorena Vargas').should('be.visible');
+    cy.contains('Vargas Lorena').should('be.visible');
   });
 
   it('2.3 — Validar que el nuevo cajero pueda iniciar sesión y tenga RBAC aplicado', () => {
     cy.logout();
     cy.login(testEmail, 'Cajera123*');
 
-    cy.contains('Bienvenido, Lorena Vargas').should('be.visible');
     cy.contains('CASHIER').should('be.visible');
 
-    // Verify "Usuarios" menu is hidden for CASHIER
-    cy.get('nav').should('not.contain', 'Usuarios');
+    // Verify "Administración" module card is hidden for CASHIER
+    cy.get('body').should('not.contain', 'Gestión de usuarios y cajeros');
   });
 });

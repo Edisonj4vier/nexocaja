@@ -2,6 +2,7 @@ describe('5. Caja Registradora', () => {
   beforeEach(() => {
     cy.loginAsAdmin();
     cy.visit('/cash-register');
+    cy.contains('Consultando estado de caja...', { timeout: 8000 }).should('not.exist');
   });
 
   it('5.1 — Visualizar módulo de caja (abierta o cerrada)', () => {
