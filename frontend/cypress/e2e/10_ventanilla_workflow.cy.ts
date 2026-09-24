@@ -51,7 +51,9 @@ describe('10. Flujo Integral: Socio 360° -> Ventanilla (Depósito Automático)'
       cy.get('[role="dialog"] button[type="submit"]').click({ force: true });
       cy.wait('@depositReq').its('response.statusCode').should('eq', 201);
 
-      // Verificar que el diálogo se cierra y el depósito aparece en la tabla de movimientos
+      // El comprobante / boucher digital se genera automáticamente
+      cy.contains(/¡Depósito exitoso!/i, { timeout: 8000 }).should('be.visible');
+      cy.contains('button', 'Cerrar').click({ force: true });
       cy.get('[role="dialog"]', { timeout: 8000 }).should('not.exist');
       cy.contains(accountNumber, { timeout: 10000 }).should('be.visible');
       cy.contains('+$15.00').should('be.visible');

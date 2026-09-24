@@ -55,9 +55,9 @@ export const useMovements = () => {
     try {
       setIsLoading(true);
       setError(null);
-      await api.post('/movements/deposit', data);
+      const response = await api.post('/movements/deposit', data);
       await fetchMovements();
-      return true;
+      return response.data;
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al registrar depósito');
       setIsLoading(false);
@@ -69,13 +69,23 @@ export const useMovements = () => {
     try {
       setIsLoading(true);
       setError(null);
-      await api.post('/movements/withdrawal', data);
+      const response = await api.post('/movements/withdrawal', data);
       await fetchMovements();
-      return true;
+      return response.data;
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al registrar retiro');
       setIsLoading(false);
       return false;
+    }
+  };
+
+  const getVoucher = async (movementId: string) => {
+    try {
+      const response = await api.get(`/movements/${movementId}/voucher`);
+      return response.data;
+    } catch (err: any) {
+      setError('Error al obtener comprobante');
+      return null;
     }
   };
 
@@ -103,6 +113,7 @@ export const useMovements = () => {
     fetchMovements,
     deposit,
     withdrawal,
+    getVoucher,
     exportMovements,
   };
 };

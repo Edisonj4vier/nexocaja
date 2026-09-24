@@ -38,8 +38,8 @@ export class MovementsService {
     if (account.status !== 'ACTIVE')
       throw new BadRequestException('La cuenta está inactiva.');
 
-    return this.prisma.$transaction(async (tx) => {
-      const movement = await tx.movement.create({
+    const movement = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.movement.create({
         data: {
           type: 'DEPOSIT',
           amount: dto.amount,
@@ -59,8 +59,10 @@ export class MovementsService {
         },
       });
 
-      return movement;
+      return created;
     });
+
+    return this.getVoucher(movement.id);
   }
 
   async withdrawal(userId: string, dto: CreateMovementDto) {
@@ -79,8 +81,8 @@ export class MovementsService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      const movement = await tx.movement.create({
+    const movement = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.movement.create({
         data: {
           type: 'WITHDRAWAL',
           amount: dto.amount,
@@ -100,8 +102,10 @@ export class MovementsService {
         },
       });
 
-      return movement;
+      return created;
     });
+
+    return this.getVoucher(movement.id);
   }
 
   async findAll(query: QueryMovementDto) {
@@ -223,4 +227,82 @@ export class MovementsService {
       return this.exportService.generatePdf('Reporte de Movimientos', columns, data);
     }
   }
+
+  async getVoucher(movementId: string) {
+    const movement = await this.prisma.movement.findUnique({
+      where: { id: movementId },
+      include: {
+        user: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+        cashRegister: true,
+        account: {
+          include: {
+            client: true,
+            product: true,
+          },
+        },
+      },
+    });
+
+    if (!movement) {
+      throw new NotFoundException('Movimiento no encontrado.');
+    }
+
+    const priorMovements = await this.prisma.movement.findMany({
+      where: {
+        accountId: movement.accountId,
+        OR: [
+          { createdAt: { lt: movement.createdAt } },
+          {
+            createdAt: movement.createdAt,
+            id: { lt: movement.id },
+          },
+        ],
+      },
+      select: { type: true, amount: true },
+    });
+
+    const openingAmount = Number(movement.account.openingAmount || 0);
+    const priorNet = priorMovements.reduce((acc, m) => {
+      const amt = Number(m.amount);
+      return m.type === 'DEPOSIT' ? acc + amt : acc - amt;
+    }, 0);
+
+    const previousBalance = openingAmount + priorNet;
+    const isDeposit = movement.type === 'DEPOSIT';
+    const amountNum = Number(movement.amount);
+    const newBalance = isDeposit ? previousBalance + amountNum : previousBalance - amountNum;
+
+    const created = new Date(movement.createdAt);
+    const year = created.getFullYear();
+    const documentNumber = `VCH-${year}-${movement.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+
+    return {
+      id: movement.id,
+      documentNumber,
+      type: movement.type,
+      amount: amountNum,
+      previousBalance,
+      newBalance,
+      observations: movement.observations,
+      createdAt: movement.createdAt,
+      accountId: movement.accountId,
+      accountNumber: movement.account.accountNumber,
+      productName: movement.account.product?.name || 'Ahorros Ordinaria',
+      agency: movement.account.agency || 'Matriz',
+      clientId: movement.account.client.id,
+      clientName: `${movement.account.client.lastName} ${movement.account.client.firstName}`,
+      clientDni: movement.account.client.identificationNumber,
+      cashierId: movement.user?.id,
+      cashierName: movement.user ? `${movement.user.firstName} ${movement.user.lastName}` : 'Cajero de Ventanilla',
+      cashRegisterId: movement.cashRegisterId,
+    };
+  }
+
+  async exportVoucherPdf(movementId: string) {
+    const voucher = await this.getVoucher(movementId);
+    return this.exportService.generateTransactionVoucherPdf(voucher);
+  }
 }
+

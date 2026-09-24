@@ -35,46 +35,59 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
+import { validateIdentification } from '@/utils/ecuadorianIdValidator';
 
-const clientSchema = z.object({
-  // Step 1: Personal
-  personType: z.enum(['NATURAL', 'LEGAL']),
-  identificationType: z.string().min(1, 'Seleccione tipo de identificación'),
-  identificationNumber: z.string().min(8, 'Debe tener al menos 8 caracteres'),
-  firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
-  birthDate: z.string().optional(),
-  gender: z.string().optional(),
-  maritalStatus: z.string().optional(),
-  nationality: z.string().default('Ecuatoriana'),
+const clientSchema = z
+  .object({
+    // Step 1: Personal
+    personType: z.enum(['NATURAL', 'LEGAL']),
+    identificationType: z.string().min(1, 'Seleccione tipo de identificación'),
+    identificationNumber: z.string().min(1, 'El número de identificación es requerido'),
+    firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+    lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
+    birthDate: z.string().optional(),
+    gender: z.string().optional(),
+    maritalStatus: z.string().optional(),
+    nationality: z.string().default('Ecuatoriana'),
 
-  // Step 2: Contact
-  phone: z.string().min(7, 'El teléfono principal es requerido'),
-  secondaryPhone: z.string().optional(),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
-  province: z.string().optional(),
-  city: z.string().optional(),
-  parish: z.string().optional(),
-  address: z.string().optional(),
-  addressReference: z.string().optional(),
+    // Step 2: Contact
+    phone: z.string().min(7, 'El teléfono principal es requerido'),
+    secondaryPhone: z.string().optional(),
+    email: z.string().email('Email inválido').optional().or(z.literal('')),
+    province: z.string().optional(),
+    city: z.string().optional(),
+    parish: z.string().optional(),
+    address: z.string().optional(),
+    addressReference: z.string().optional(),
 
-  // Step 3: Socioeconomic
-  occupation: z.string().optional(),
-  profession: z.string().optional(),
-  employerCompany: z.string().optional(),
-  monthlyIncome: z.number().min(0).optional(),
-  economicActivity: z.string().optional(),
-  workAddress: z.string().optional(),
-  emergencyContactName: z.string().optional(),
-  emergencyContactRelationship: z.string().optional(),
-  emergencyContactPhone: z.string().optional(),
+    // Step 3: Socioeconomic
+    occupation: z.string().optional(),
+    profession: z.string().optional(),
+    employerCompany: z.string().optional(),
+    monthlyIncome: z.coerce.number().min(0, 'El ingreso mensual debe ser mayor o igual a 0').default(0),
+    economicActivity: z.string().optional(),
+    workAddress: z.string().optional(),
+    emergencyContactName: z.string().optional(),
+    emergencyContactRelationship: z.string().optional(),
+    emergencyContactPhone: z.string().optional(),
 
-  // Step 4: Member
-  memberType: z.string().default('ACTIVO'),
-  agency: z.string().default('Matriz'),
-  totalContributions: z.number().min(0).default(0),
-});
+    // Step 4: Member
+    memberType: z.string().default('ACTIVO'),
+    agency: z.string().default('Matriz'),
+    totalContributions: z.coerce.number().min(0, 'El monto debe ser mayor o igual a 0').default(0),
+  })
+  .superRefine((data, ctx) => {
+    const valResult = validateIdentification(data.identificationType, data.identificationNumber);
+    if (!valResult.isValid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['identificationNumber'],
+        message: valResult.error || 'Número de identificación no válido',
+      });
+    }
+  });
 
 type ClientFormValues = z.infer<typeof clientSchema>;
 
@@ -125,7 +138,7 @@ export function ClientWizardDialog({
       occupation: '',
       profession: '',
       employerCompany: '',
-      monthlyIncome: 0,
+      monthlyIncome: '' as any,
       economicActivity: '',
       workAddress: '',
       emergencyContactName: '',
@@ -133,7 +146,7 @@ export function ClientWizardDialog({
       emergencyContactPhone: '',
       memberType: 'ACTIVO',
       agency: 'Matriz',
-      totalContributions: 0,
+      totalContributions: '' as any,
     },
   });
 
@@ -162,7 +175,7 @@ export function ClientWizardDialog({
           occupation: client.occupation || '',
           profession: client.profession || '',
           employerCompany: client.employerCompany || '',
-          monthlyIncome: Number(client.monthlyIncome || 0),
+          monthlyIncome: client.monthlyIncome && Number(client.monthlyIncome) > 0 ? Number(client.monthlyIncome) : ('' as any),
           economicActivity: client.economicActivity || '',
           workAddress: client.workAddress || '',
           emergencyContactName: client.emergencyContactName || '',
@@ -170,7 +183,7 @@ export function ClientWizardDialog({
           emergencyContactPhone: client.emergencyContactPhone || '',
           memberType: client.memberType || 'ACTIVO',
           agency: client.agency || 'Matriz',
-          totalContributions: Number(client.totalContributions || 0),
+          totalContributions: client.totalContributions && Number(client.totalContributions) > 0 ? Number(client.totalContributions) : ('' as any),
         });
       } else {
         form.reset();
@@ -190,6 +203,8 @@ export function ClientWizardDialog({
       ]);
     } else if (currentStep === 2) {
       isValid = await form.trigger(['phone', 'email']);
+    } else if (currentStep === 3) {
+      isValid = await form.trigger(['monthlyIncome']);
     } else {
       isValid = true;
     }
@@ -264,7 +279,22 @@ export function ClientWizardDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-6 pt-2">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (currentStep < 4) {
+                  handleNextStep();
+                }
+              }
+            }}
+            className="space-y-6 pt-2"
+          >
             {/* STEP 1: INFORMACIÓN PERSONAL */}
             {currentStep === 1 && (
               <div className="space-y-4">
@@ -333,15 +363,107 @@ export function ClientWizardDialog({
                   <FormField
                     control={form.control}
                     name="identificationNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold">Número de Identificación *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ej. 1712345678" {...field} className="h-9 font-mono" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const selectedIdType = form.watch('identificationType') || 'Cédula';
+                      const valResult = validateIdentification(selectedIdType, field.value);
+                      const isComplete =
+                        (selectedIdType === 'Cédula' && field.value.length === 10) ||
+                        (selectedIdType === 'RUC' && field.value.length === 13);
+
+                      const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                        let val = e.target.value;
+                        if (selectedIdType === 'Cédula') {
+                          val = val.replace(/\D/g, '').slice(0, 10);
+                        } else if (selectedIdType === 'RUC') {
+                          val = val.replace(/\D/g, '').slice(0, 13);
+                        } else if (selectedIdType === 'Pasaporte') {
+                          val = val.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
+                        }
+                        field.onChange(val);
+
+                        // Si es cédula válida completa, sugerir provincia automáticamente
+                        if (selectedIdType === 'Cédula' && val.length === 10) {
+                          const check = validateIdentification('Cédula', val);
+                          if (check.isValid && check.province) {
+                            const currentProv = form.getValues('province');
+                            if (!currentProv || currentProv === 'Pichincha') {
+                              form.setValue('province', check.province);
+                            }
+                          }
+                        }
+                      };
+
+                      return (
+                        <FormItem>
+                          <div className="flex items-center justify-between">
+                            <FormLabel className="text-xs font-semibold">Número de Identificación *</FormLabel>
+                            {selectedIdType === 'Cédula' && (
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {field.value?.length || 0}/10 dígitos
+                              </span>
+                            )}
+                            {selectedIdType === 'RUC' && (
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {field.value?.length || 0}/13 dígitos
+                              </span>
+                            )}
+                          </div>
+                          <FormControl>
+                            <Input
+                              placeholder={
+                                selectedIdType === 'Cédula'
+                                  ? '10 dígitos (ej. 1752466951)'
+                                  : selectedIdType === 'RUC'
+                                  ? '13 dígitos (ej. 1752466951001)'
+                                  : 'Pasaporte alfanumérico'
+                              }
+                              {...field}
+                              onChange={handleNumberChange}
+                              className={`h-9 font-mono transition-colors ${
+                                isComplete && valResult.isValid
+                                  ? 'border-emerald-500 focus-visible:ring-emerald-500 bg-emerald-50/20'
+                                  : isComplete && !valResult.isValid
+                                  ? 'border-rose-500 focus-visible:ring-rose-500 bg-rose-50/20'
+                                  : ''
+                              }`}
+                            />
+                          </FormControl>
+
+                          {/* Feedback visual interactivo en tiempo real */}
+                          {field.value && field.value.length > 0 && (
+                            <div className="mt-1">
+                              {isComplete && valResult.isValid && (
+                                <div className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 animate-in fade-in">
+                                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 text-emerald-500" />
+                                  <span>
+                                    {selectedIdType} válida
+                                    {valResult.province ? ` • Provincia: ${valResult.province}` : ''}
+                                  </span>
+                                </div>
+                              )}
+                              {isComplete && !valResult.isValid && (
+                                <div className="text-[11px] font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1.5 animate-in fade-in">
+                                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 text-rose-500" />
+                                  <span>{valResult.error}</span>
+                                </div>
+                              )}
+                              {!isComplete && selectedIdType === 'Cédula' && (
+                                <div className="text-[10px] text-slate-400">
+                                  Faltan {10 - field.value.length} dígitos para completar la cédula
+                                </div>
+                              )}
+                              {!isComplete && selectedIdType === 'RUC' && (
+                                <div className="text-[10px] text-slate-400">
+                                  Faltan {13 - field.value.length} dígitos para completar el RUC
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
                 </div>
 
@@ -606,8 +728,26 @@ export function ClientWizardDialog({
                       <FormItem>
                         <FormLabel className="text-xs font-semibold">Ingresos Mensuales Estimados (USD)</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="Ej. 850.00" {...field} className="h-9" />
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="Ej. 850.00"
+                            {...field}
+                            value={field.value ?? ''}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
+                                val = val.replace(/^0+/, '') || '0';
+                                e.target.value = val;
+                              }
+                              field.onChange(val === '' ? '' : Number(val));
+                            }}
+                            className="h-9"
+                          />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -671,10 +811,12 @@ export function ClientWizardDialog({
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-                        Generación Automática de Expediente
+                        {client ? 'Expediente Oficial de Socio' : 'Generación Automática de Expediente'}
                       </p>
                       <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
-                        Al guardar, el sistema asignará el código de socio correlativo oficial (ej. <span className="font-mono font-bold">SOC-000101</span>).
+                        {client
+                          ? `Expediente activo: ${client.memberCode || 'SOC-ACTIVO'}`
+                          : 'Al guardar, el sistema asignará el código de socio correlativo oficial (ej. SOC-000101).'}
                       </p>
                     </div>
                   </div>
@@ -724,14 +866,65 @@ export function ClientWizardDialog({
                     <FormItem>
                       <FormLabel className="text-xs font-semibold">Aportación Social Inicial (USD)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="Ej. 20.00" {...field} className="h-9" />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Ej. 20.00"
+                          {...field}
+                          value={field.value ?? ''}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => {
+                            let val = e.target.value;
+                            if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
+                              val = val.replace(/^0+/, '') || '0';
+                              e.target.value = val;
+                            }
+                            field.onChange(val === '' ? '' : Number(val));
+                          }}
+                          className="h-9"
+                        />
                       </FormControl>
+                      <FormMessage />
                       <p className="text-[11px] text-slate-400">
                         Monto voluntario u obligatorio de capital social aportado al registrarse.
                       </p>
                     </FormItem>
                   )}
                 />
+
+                {/* Summary Card before confirmation */}
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 space-y-2 text-xs">
+                  <span className="font-bold text-slate-800 dark:text-zinc-200 block uppercase text-[10px] tracking-wider">
+                    {client ? 'Resumen de Cambios a Guardar' : 'Resumen del Socio a Registrar'}
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Socio Titular:</span>
+                      <span className="font-bold text-slate-900 dark:text-zinc-100">
+                        {form.watch('firstName')} {form.watch('lastName')}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Identificación:</span>
+                      <span className="font-mono font-bold text-slate-900 dark:text-zinc-100">
+                        {form.watch('identificationType')}: ••••{form.watch('identificationNumber')?.slice(-4)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Teléfono Principal:</span>
+                      <span className="text-slate-700 dark:text-zinc-300">
+                        {form.watch('phone') || 'S/N'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Domicilio:</span>
+                      <span className="text-slate-700 dark:text-zinc-300 truncate block">
+                        {form.watch('city') || 'Quito'}, {form.watch('province') || 'Pichincha'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -775,9 +968,12 @@ export function ClientWizardDialog({
                   </Button>
                 ) : (
                   <Button
-                    type="submit"
+                    type="button"
                     size="sm"
                     disabled={isLoading}
+                    onClick={() => {
+                      form.handleSubmit(onFormSubmit)();
+                    }}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs font-semibold shadow-xs"
                   >
                     {isLoading ? 'Guardando...' : client ? 'Guardar Cambios' : 'Registrar Socio'}

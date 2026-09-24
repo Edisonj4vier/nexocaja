@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, Res, Param } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { MovementsService } from '../services/movements.service';
@@ -37,6 +37,24 @@ export class MovementsController {
     return this.movementsService.findAll(query);
   }
 
+  @Roles('ADMIN', 'CASHIER')
+  @Get(':id/voucher')
+  getVoucher(@Param('id') id: string) {
+    return this.movementsService.getVoucher(id);
+  }
+
+  @Roles('ADMIN', 'CASHIER')
+  @Get(':id/voucher/pdf')
+  async exportVoucherPdf(@Param('id') id: string, @Res() res: Response) {
+    const buffer = await this.movementsService.exportVoucherPdf(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=comprobante-${id}.pdf`,
+      'Content-Length': buffer.length,
+    });
+    res.send(buffer);
+  }
+
   @Get('export/excel')
   async exportExcel(@Query() query: QueryMovementDto, @Res() res: Response) {
     const buffer = await this.movementsService.export(query, 'excel');
@@ -59,3 +77,4 @@ export class MovementsController {
     res.send(buffer);
   }
 }
+

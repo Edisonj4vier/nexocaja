@@ -9,6 +9,7 @@ import { UserPlus } from 'lucide-react';
 import { TableToolbar } from '@/components/shared/TableToolbar';
 import { useDebounce } from '@/hooks/useDebounce';
 import { downloadFile } from '@/lib/utils';
+import { toast } from '@/stores/toast.store';
 
 export default function ClientsPage() {
   const navigate = useNavigate();
@@ -56,9 +57,27 @@ export default function ClientsPage() {
 
   const handleWizardSubmit = async (data: any) => {
     if (selectedClient) {
-      await updateClient(selectedClient.id, data);
+      const res = await updateClient(selectedClient.id, data);
+      if (res) {
+        toast.success(
+          '¡Ficha de Socio Actualizada!',
+          `Los datos de ${data.firstName} ${data.lastName} se actualizaron correctamente.`
+        );
+      }
     } else {
-      await createClient(data);
+      const res = await createClient(data);
+      if (res) {
+        toast.success(
+          '¡Socio Registrado Exitosamente!',
+          `Se generó el expediente oficial ${res.memberCode || ''} para ${res.firstName} ${res.lastName}.`,
+          {
+            action: {
+              label: 'Ver Ficha 360°',
+              onClick: () => navigate(`/app/clients/${res.id}`),
+            },
+          }
+        );
+      }
     }
     setIsWizardOpen(false);
     fetchClients({ page, search: debouncedSearch, startDate, endDate });

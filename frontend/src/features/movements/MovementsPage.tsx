@@ -30,11 +30,15 @@ import {
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
+  Receipt,
 } from 'lucide-react';
 import { TransactionFormDialog } from './components/TransactionFormDialog';
+import { TransactionVoucherModal } from './components/TransactionVoucherModal';
 import { TableToolbar } from '@/components/shared/TableToolbar';
 import { useDebounce } from '@/hooks/useDebounce';
 import { downloadFile } from '@/lib/utils';
+import type { TransactionVoucher } from '@/types';
+import api from '@/lib/axios';
 
 export default function MovementsPage() {
   const [searchParams] = useSearchParams();
@@ -61,6 +65,20 @@ export default function MovementsPage() {
   const [search, setSearch] = useState(accountParam);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  const [selectedVoucher, setSelectedVoucher] = useState<TransactionVoucher | null>(null);
+  const [isVoucherOpen, setIsVoucherOpen] = useState(false);
+
+  const handleOpenVoucher = async (movementId: string) => {
+    try {
+      const response = await api.get(`/movements/${movementId}/voucher`);
+      setSelectedVoucher(response.data);
+      setIsVoucherOpen(true);
+    } catch (err) {
+      console.error('Error al cargar voucher', err);
+    }
+  };
+
   
   const debouncedSearch = useDebounce(search, 500);
 
@@ -188,6 +206,24 @@ export default function MovementsPage() {
           </div>
         );
       },
+    },
+    {
+      id: 'voucher',
+      header: () => <div className="text-center">Comprobante</div>,
+      cell: ({ row }) => (
+        <div className="text-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleOpenVoucher(row.original.id)}
+            className="h-8 px-2.5 text-xs text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 font-semibold gap-1.5"
+            title="Ver Boucher / Comprobante Oficial"
+          >
+            <Receipt className="w-3.5 h-3.5" />
+            <span>Boucher</span>
+          </Button>
+        </div>
+      ),
     },
   ];
 
@@ -347,6 +383,15 @@ export default function MovementsPage() {
         isLoading={isLoading}
         initialAccountNumber={accountParam}
       />
+
+      {/* Standalone Re-print / View Voucher Modal */}
+      {selectedVoucher && (
+        <TransactionVoucherModal
+          open={isVoucherOpen}
+          onOpenChange={setIsVoucherOpen}
+          voucher={selectedVoucher}
+        />
+      )}
     </div>
   );
 }

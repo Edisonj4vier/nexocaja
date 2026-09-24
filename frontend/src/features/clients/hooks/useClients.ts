@@ -66,13 +66,13 @@ export const useClients = () => {
       setIsLoading(true);
       setError(null);
       const payload = sanitizePayload(data);
-      await api.post('/clients', payload);
+      const response = await api.post('/clients', payload);
       await fetchClients();
-      return true;
+      return response.data;
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al crear cliente');
       setIsLoading(false);
-      return false;
+      return null;
     }
   };
 
@@ -81,13 +81,13 @@ export const useClients = () => {
       setIsLoading(true);
       setError(null);
       const payload = sanitizePayload(data);
-      await api.patch(`/clients/${id}`, payload);
+      const response = await api.patch(`/clients/${id}`, payload);
       await fetchClients();
-      return true;
+      return response.data;
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al actualizar cliente');
       setIsLoading(false);
-      return false;
+      return null;
     }
   };
 

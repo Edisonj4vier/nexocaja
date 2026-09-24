@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ClientsService } from './clients.service';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ExportService } from '../../export/export.service';
@@ -27,7 +27,7 @@ describe('ClientsService', () => {
     memberCode: 'SOC-000001',
     personType: PersonType.NATURAL,
     identificationType: 'CEDULA',
-    identificationNumber: '1712345678',
+    identificationNumber: '1752466951',
     firstName: 'Edison',
     lastName: 'Pérez',
     phone: '0987654321',
@@ -92,7 +92,7 @@ describe('ClientsService', () => {
     const createDto = {
       personType: PersonType.NATURAL,
       identificationType: 'CEDULA',
-      identificationNumber: '1799887766',
+      identificationNumber: '1752466951',
       firstName: 'María',
       lastName: 'López',
       phone: '0999112233',
@@ -111,10 +111,19 @@ describe('ClientsService', () => {
       const result = await service.create(createDto as any);
 
       expect(prisma.client.findUnique).toHaveBeenCalledWith({
-        where: { identificationNumber: '1799887766' },
+        where: { identificationNumber: '1752466951' },
       });
       expect(prisma.client.create).toHaveBeenCalled();
       expect(result.memberCode).toBe('SOC-000005');
+    });
+
+    it('should throw BadRequestException if identification is mathematically invalid', async () => {
+      await expect(
+        service.create({
+          ...createDto,
+          identificationNumber: '1752466952', // invalid verifier digit
+        } as any),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw ConflictException if identification already exists', async () => {

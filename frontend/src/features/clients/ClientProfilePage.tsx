@@ -6,8 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClientWizardDialog } from './components/ClientWizardDialog';
 import { AccountOpenDialog } from '@/features/accounts/components/AccountOpenDialog';
+import { AccountStatementDialog } from '@/features/accounts/components/AccountStatementDialog';
+import { TransactionVoucherModal } from '@/features/movements/components/TransactionVoucherModal';
 import { useClients } from './hooks/useClients';
 import { useUiStore } from '@/stores/ui.store';
+import { toast } from '@/stores/toast.store';
+import type { TransactionVoucher } from '@/types';
+import api from '@/lib/axios';
 import {
   ArrowLeft,
   User,
@@ -22,6 +27,7 @@ import {
   Pencil,
   ArrowUpRight,
   ArrowDownLeft,
+  Receipt,
 } from 'lucide-react';
 
 export default function ClientProfilePage() {
@@ -33,6 +39,27 @@ export default function ClientProfilePage() {
   const [activeTab, setActiveTab] = useState<'accounts' | 'movements' | 'dossier' | 'documents' | 'audit'>('accounts');
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+
+  const [statementAccountId, setStatementAccountId] = useState<string | null>(null);
+  const [isStatementOpen, setIsStatementOpen] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState<TransactionVoucher | null>(null);
+  const [isVoucherOpen, setIsVoucherOpen] = useState(false);
+
+  const handleOpenStatement = (accId: string) => {
+    setStatementAccountId(accId);
+    setIsStatementOpen(true);
+  };
+
+  const handleOpenVoucher = async (movementId: string) => {
+    try {
+      const response = await api.get(`/movements/${movementId}/voucher`);
+      setSelectedVoucher(response.data);
+      setIsVoucherOpen(true);
+    } catch (err) {
+      console.error('Error al cargar voucher', err);
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -62,7 +89,10 @@ export default function ClientProfilePage() {
   }
 
   const handleEditSubmit = async (values: any) => {
-    await updateClient(client.id, values);
+    const res = await updateClient(client.id, values);
+    if (res) {
+      toast.success('¡Ficha Actualizada!', 'Los cambios del socio se guardaron exitosamente.');
+    }
     setIsEditOpen(false);
     refetch();
   };
@@ -318,16 +348,28 @@ export default function ClientProfilePage() {
                     </div>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/app/accounts/${acc.id}`)}
-                      className="text-xs text-emerald-600 hover:text-emerald-700 p-0 font-semibold flex items-center gap-1"
-                    >
-                      <span>Ver Ficha de Cuenta</span>
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                    </Button>
+                  <div className="mt-6 pt-4 border-t border-slate-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/app/accounts/${acc.id}`)}
+                        className="text-xs text-emerald-600 hover:text-emerald-700 p-0 font-semibold flex items-center gap-1"
+                      >
+                        <span>Ficha</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenStatement(acc.id)}
+                        className="text-xs text-slate-600 hover:text-emerald-700 p-0 font-semibold flex items-center gap-1"
+                        title="Ver Estado de Cuenta Oficial"
+                      >
+                        <Receipt className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Estado Cta.</span>
+                      </Button>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
@@ -337,7 +379,7 @@ export default function ClientProfilePage() {
                       }}
                       className="text-[11px] h-7 px-2.5"
                     >
-                      Operar en Ventanilla
+                      Operar
                     </Button>
                   </div>
                 </div>
@@ -384,6 +426,7 @@ export default function ClientProfilePage() {
                   <th className="py-3 px-4">TIPO</th>
                   <th className="py-3 px-4">MONTO</th>
                   <th className="py-3 px-4">OBSERVACIONES</th>
+                  <th className="py-3 px-4 text-center">COMPROBANTE</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
@@ -416,6 +459,18 @@ export default function ClientProfilePage() {
                     </td>
                     <td className="py-3 px-4 text-slate-500">
                       {m.observations || 'Sin observaciones'}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenVoucher(m.id)}
+                        className="h-7 px-2 text-xs text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 font-semibold gap-1"
+                        title="Ver Boucher de esta operación"
+                      >
+                        <Receipt className="w-3.5 h-3.5" />
+                        <span>Boucher</span>
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -676,6 +731,25 @@ export default function ClientProfilePage() {
           refetch();
         }}
       />
+
+      {/* Account Statement Dialog */}
+      {statementAccountId && (
+        <AccountStatementDialog
+          open={isStatementOpen}
+          onOpenChange={setIsStatementOpen}
+          accountId={statementAccountId}
+        />
+      )}
+
+      {/* Standalone Voucher Modal */}
+      {selectedVoucher && (
+        <TransactionVoucherModal
+          open={isVoucherOpen}
+          onOpenChange={setIsVoucherOpen}
+          voucher={selectedVoucher}
+        />
+      )}
     </div>
   );
 }
+

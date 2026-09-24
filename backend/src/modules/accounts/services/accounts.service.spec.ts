@@ -21,13 +21,26 @@ describe('AccountsService', () => {
     financialProduct: {
       findUnique: jest.Mock;
     };
+    movement: {
+      findMany: jest.Mock;
+    };
   };
-  let exportService: Partial<ExportService>;
+  let exportService: {
+    generateExcel: jest.Mock;
+    generatePdf: jest.Mock;
+    generateCooperativeStatementPdf: jest.Mock;
+  };
 
   const mockClient = {
     id: 'client-1',
     firstName: 'Edison',
     lastName: 'Pérez',
+    identificationNumber: '1712345678',
+    phone: '0991234567',
+    address: 'Quito, Pichincha',
+    city: 'Quito',
+    province: 'Pichincha',
+    memberCode: 'SOC-000001',
   };
 
   const mockProduct = {
@@ -52,11 +65,15 @@ describe('AccountsService', () => {
       financialProduct: {
         findUnique: jest.fn(),
       },
+      movement: {
+        findMany: jest.fn(),
+      },
     };
 
     exportService = {
-      toExcel: jest.fn(),
-      toPdf: jest.fn(),
+      generateExcel: jest.fn(),
+      generatePdf: jest.fn(),
+      generateCooperativeStatementPdf: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -150,4 +167,85 @@ describe('AccountsService', () => {
       expect(result.data).toHaveLength(1);
     });
   });
+
+  describe('getAccountStatement and exportStatementPdf', () => {
+    const mockAccountWithClient = {
+      id: 'acc-1',
+      accountNumber: '210100000001',
+      openingAmount: 100,
+      balance: 350,
+      status: AccountStatus.ACTIVE,
+      openedAt: new Date('2026-01-01T10:00:00Z'),
+      client: mockClient,
+      product: mockProduct,
+    };
+
+    it('should throw NotFoundException if account not found', async () => {
+      prisma.account.findUnique.mockResolvedValue(null);
+      await expect(service.getAccountStatement('acc-nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should calculate initialBalance, running balance and conciliation accurately', async () => {
+      prisma.account.findUnique.mockResolvedValue(mockAccountWithClient);
+
+      // Prior movements before 2026-04-01
+      prisma.movement.findMany
+        .mockResolvedValueOnce([
+          { type: 'DEPOSIT', amount: 50 },
+          { type: 'WITHDRAWAL', amount: 20 },
+        ])
+        // Range movements between 2026-04-01 and 2026-04-30
+        .mockResolvedValueOnce([
+          {
+            id: 'mov-1',
+            type: 'DEPOSIT',
+            amount: 200,
+            observations: 'Depósito sueldo',
+            createdAt: new Date('2026-04-05T14:30:00Z'),
+            user: { firstName: 'Juan', lastName: 'Cajero' },
+          },
+          {
+            id: 'mov-2',
+            type: 'WITHDRAWAL',
+            amount: 50,
+            observations: 'Retiro cajero',
+            createdAt: new Date('2026-04-10T09:15:00Z'),
+            user: { firstName: 'Juan', lastName: 'Cajero' },
+          },
+        ]);
+
+      const statement = await service.getAccountStatement('acc-1', '2026-04-01', '2026-04-30');
+
+      // opening (100) + priorNet (50 - 20 = 30) = 130
+      expect(statement.conciliation.saldoAnterior).toBe(130);
+      expect(statement.conciliation.totalCreditos).toBe(200);
+      expect(statement.conciliation.totalDebitos).toBe(50);
+      // 130 + 200 - 50 = 280
+      expect(statement.conciliation.saldoActual).toBe(280);
+
+      expect(statement.movements).toHaveLength(2);
+      expect(statement.movements[0].balance).toBe(330); // 130 + 200
+      expect(statement.movements[1].balance).toBe(280); // 330 - 50
+      expect(statement.movements[0].document).toContain('VCH-2026-');
+      expect(statement.account.accountNumber).toBe('210100000001');
+    });
+
+    it('should export statement PDF buffer correctly', async () => {
+      prisma.account.findUnique.mockResolvedValue(mockAccountWithClient);
+      prisma.movement.findMany.mockResolvedValue([]);
+      const dummyBuffer = Buffer.from('PDF_CONTENT');
+      exportService.generateCooperativeStatementPdf.mockResolvedValue(dummyBuffer);
+
+      const buffer = await service.exportStatementPdf('acc-1');
+      expect(buffer).toBe(dummyBuffer);
+      expect(exportService.generateCooperativeStatementPdf).toHaveBeenCalledWith(
+        expect.objectContaining({
+          account: expect.objectContaining({ accountNumber: '210100000001' }),
+        }),
+      );
+    });
+  });
 });
+

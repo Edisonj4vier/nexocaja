@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ExportService } from '../../export/export.service';
@@ -9,6 +10,7 @@ import { CreateClientDto } from '../dto/create-client.dto';
 import { UpdateClientDto } from '../dto/update-client.dto';
 import { QueryClientDto } from '../dto/query-client.dto';
 import { Prisma, PersonType, ClientStatus } from '@prisma/client';
+import { validateIdentification } from '../../../common/validators/ecuadorian-id.validator';
 
 @Injectable()
 export class ClientsService {
@@ -33,6 +35,11 @@ export class ClientsService {
   }
 
   async create(dto: CreateClientDto) {
+    const idValidation = validateIdentification(dto.identificationType, dto.identificationNumber);
+    if (!idValidation.isValid) {
+      throw new BadRequestException(idValidation.error || 'Número de identificación no válido.');
+    }
+
     const existingClient = await this.prisma.client.findUnique({
       where: { identificationNumber: dto.identificationNumber },
     });
@@ -213,9 +220,15 @@ export class ClientsService {
   }
 
   async update(id: string, dto: UpdateClientDto) {
-    await this.findOne(id);
+    const current = await this.findOne(id);
 
     if (dto.identificationNumber) {
+      const typeToCheck = dto.identificationType || current.identificationType;
+      const idValidation = validateIdentification(typeToCheck, dto.identificationNumber);
+      if (!idValidation.isValid) {
+        throw new BadRequestException(idValidation.error || 'Número de identificación no válido.');
+      }
+
       const existing = await this.prisma.client.findFirst({
         where: {
           identificationNumber: dto.identificationNumber,
@@ -235,8 +248,8 @@ export class ClientsService {
       data: {
         ...dto,
         birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
-        monthlyIncome: dto.monthlyIncome ? new Prisma.Decimal(dto.monthlyIncome) : undefined,
-        totalContributions: dto.totalContributions ? new Prisma.Decimal(dto.totalContributions) : undefined,
+        monthlyIncome: dto.monthlyIncome !== undefined ? new Prisma.Decimal(dto.monthlyIncome) : undefined,
+        totalContributions: dto.totalContributions !== undefined ? new Prisma.Decimal(dto.totalContributions) : undefined,
       },
     });
   }

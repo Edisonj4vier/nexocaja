@@ -16,7 +16,12 @@ import {
   Calendar,
   Building,
   Users,
+  Receipt,
 } from 'lucide-react';
+import { AccountStatementDialog } from './components/AccountStatementDialog';
+import { TransactionVoucherModal } from '@/features/movements/components/TransactionVoucherModal';
+import type { TransactionVoucher } from '@/types';
+import api from '@/lib/axios';
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +29,21 @@ export default function AccountDetailPage() {
   const { account, isLoading, error } = useAccountDetail(id);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'movements' | 'beneficiaries' | 'accounting'>('movements');
+
+  const [isStatementOpen, setIsStatementOpen] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState<TransactionVoucher | null>(null);
+  const [isVoucherOpen, setIsVoucherOpen] = useState(false);
+
+  const handleOpenVoucher = async (movementId: string) => {
+    try {
+      const response = await api.get(`/movements/${movementId}/voucher`);
+      setSelectedVoucher(response.data);
+      setIsVoucherOpen(true);
+    } catch (err) {
+      console.error('Error al cargar voucher', err);
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -159,6 +179,14 @@ export default function AccountDetailPage() {
               <ArrowUpRight className="w-4 h-4" />
               Retirar en Ventanilla
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsStatementOpen(true)}
+              className="border-emerald-500/50 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs h-9 px-4 gap-1.5 font-semibold"
+            >
+              <Receipt className="w-4 h-4 text-emerald-400" />
+              Estado de Cuenta
+            </Button>
           </div>
 
           <div className="flex items-center gap-4 text-xs text-slate-400 font-medium">
@@ -218,10 +246,21 @@ export default function AccountDetailPage() {
       {activeTab === 'movements' && (
         <div className="bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-xs">
           <div className="p-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-zinc-200">
-              Extracto de Transacciones
-            </h3>
-            <span className="text-xs text-slate-400">Últimos movimientos registrados en ventanilla</span>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-zinc-200">
+                Extracto de Transacciones
+              </h3>
+              <span className="text-xs text-slate-400">Últimos movimientos registrados en ventanilla</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsStatementOpen(true)}
+              className="text-xs gap-1.5 h-8 font-semibold text-emerald-700 bg-emerald-50/50 hover:bg-emerald-50 border-emerald-200"
+            >
+              <Receipt className="w-3.5 h-3.5" />
+              <span>Ver Estado de Cuenta Completo</span>
+            </Button>
           </div>
 
           {account.movements && account.movements.length > 0 ? (
@@ -233,6 +272,7 @@ export default function AccountDetailPage() {
                   <th className="py-3 px-4">MONTO</th>
                   <th className="py-3 px-4">OPERADOR</th>
                   <th className="py-3 px-4">DETALLE</th>
+                  <th className="py-3 px-4 text-center">COMPROBANTE</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
@@ -265,6 +305,18 @@ export default function AccountDetailPage() {
                     </td>
                     <td className="py-3 px-4 text-slate-500">
                       {m.observations || 'Sin observaciones'}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenVoucher(m.id)}
+                        className="h-7 px-2 text-xs text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 font-semibold gap-1"
+                        title="Ver Boucher de esta operación"
+                      >
+                        <Receipt className="w-3.5 h-3.5" />
+                        <span>Boucher</span>
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -364,6 +416,23 @@ export default function AccountDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Account Statement Dialog */}
+      <AccountStatementDialog
+        open={isStatementOpen}
+        onOpenChange={setIsStatementOpen}
+        accountId={account.id}
+      />
+
+      {/* Standalone Voucher Modal */}
+      {selectedVoucher && (
+        <TransactionVoucherModal
+          open={isVoucherOpen}
+          onOpenChange={setIsVoucherOpen}
+          voucher={selectedVoucher}
+        />
+      )}
     </div>
   );
 }
+

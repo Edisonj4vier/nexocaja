@@ -221,3 +221,83 @@ export interface ReportFilter {
   cashRegisterId?: string;
   userId?: string;
 }
+
+// --- Vouchers (Comprobantes estilo Banco Pichincha / Produbanco) ---
+export interface TransactionVoucher {
+  id: string;
+  documentNumber: string;
+  type: MovementType;
+  amount: number;
+  previousBalance: number;
+  newBalance: number;
+  observations?: string | null;
+  createdAt: string;
+  accountId: string;
+  accountNumber: string;
+  productName?: string;
+  agency?: string;
+  clientId: string;
+  clientName: string;
+  clientDni?: string;
+  cashierId?: string;
+  cashierName: string;
+  cashRegisterId?: string;
+}
+
+// --- Estado de Cuenta (Modelo Cooperativo Daquilema / Integración) ---
+export interface StatementConciliation {
+  saldoAnterior: number;
+  totalCreditos: number;
+  totalDebitos: number;
+  saldoActual: number;
+  saldoPromedio?: number;
+}
+
+export interface StatementMovement {
+  id: string;
+  date: string;
+  time: string;
+  createdAt: string;
+  type: MovementType;
+  transaction: string;
+  detail: string;
+  document: string;
+  debit: number;
+  credit: number;
+  amount: number;
+  balance: number;
+  cashierName?: string;
+}
+
+export interface AccountStatement {
+  account: {
+    id: string;
+    accountNumber: string;
+    productName: string;
+    productType?: string;
+    agency?: string;
+    status: AccountStatus;
+    interestRate?: number;
+    openedAt?: string;
+  };
+  client: {
+    id: string;
+    fullName: string;
+    firstName: string;
+    lastName: string;
+    identificationType?: string;
+    identificationNumber: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    province?: string;
+    memberCode?: string;
+  };
+  period: {
+    startDate: string;
+    endDate: string;
+  };
+  conciliation: StatementConciliation;
+  movements: StatementMovement[];
+}
+

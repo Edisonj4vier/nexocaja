@@ -65,9 +65,37 @@ export class AccountsController {
     return this.accountsService.findOne(id);
   }
 
+  @Roles('ADMIN', 'CASHIER')
+  @Get(':id/statement')
+  getStatement(
+    @Param('id') id: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.accountsService.getAccountStatement(id, startDate, endDate);
+  }
+
+  @Roles('ADMIN', 'CASHIER')
+  @Get(':id/statement/pdf')
+  async exportStatementPdf(
+    @Param('id') id: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.accountsService.exportStatementPdf(id, startDate, endDate);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=estado-cuenta-${id}.pdf`,
+      'Content-Length': buffer.length,
+    });
+    res.send(buffer);
+  }
+
   @Roles('ADMIN')
   @Patch(':id/status')
   toggleStatus(@Param('id') id: string) {
     return this.accountsService.toggleStatus(id);
   }
 }
+

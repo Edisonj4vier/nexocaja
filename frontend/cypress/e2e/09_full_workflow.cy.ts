@@ -1,6 +1,25 @@
+export {};
+
+function generateValidEcuadorianCedula(prov = '09'): string {
+  const third = Math.floor(Math.random() * 6).toString();
+  let base = `${prov}${third}`;
+  for (let i = 0; i < 6; i++) {
+    base += Math.floor(Math.random() * 10).toString();
+  }
+  const coefs = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    let prod = parseInt(base.charAt(i), 10) * coefs[i];
+    if (prod >= 10) prod -= 9;
+    sum += prod;
+  }
+  const verifier = (10 - (sum % 10)) % 10;
+  return `${base}${verifier}`;
+}
+
 describe('9. Flujo Integral de Negocio (Full Journey E2E)', () => {
   const uniqueId = Date.now().toString().slice(-4);
-  const testCedula = `09${uniqueId}5544`;
+  const testCedula = generateValidEcuadorianCedula('09');
 
   it('9.1 — Flujo completo de ciclo de vida de operaciones en NexoCaja', () => {
     // 1. Iniciar sesión como Admin

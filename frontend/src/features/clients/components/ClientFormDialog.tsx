@@ -26,17 +26,29 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Client } from '@/types';
+import { validateIdentification } from '@/utils/ecuadorianIdValidator';
 
-const formSchema = z.object({
-  identificationType: z.string().min(1, 'Seleccione un tipo de identificación'),
-  identificationNumber: z.string().min(1, 'El número de identificación es requerido'),
-  firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
-  phone: z.string().optional(),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
-  address: z.string().optional(),
-  birthDate: z.string().optional(),
-});
+const formSchema = z
+  .object({
+    identificationType: z.string().min(1, 'Seleccione un tipo de identificación'),
+    identificationNumber: z.string().min(1, 'El número de identificación es requerido'),
+    firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+    lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
+    phone: z.string().optional(),
+    email: z.string().email('Email inválido').optional().or(z.literal('')),
+    address: z.string().optional(),
+    birthDate: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const valResult = validateIdentification(data.identificationType, data.identificationNumber);
+    if (!valResult.isValid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['identificationNumber'],
+        message: valResult.error || 'Número de identificación no válido',
+      });
+    }
+  });
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -149,15 +161,35 @@ export function ClientFormDialog({
               <FormField
                 control={form.control}
                 name="identificationNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nro. Identificación</FormLabel>
-                    <FormControl>
-                      <Input placeholder="0000000000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const idType = form.watch('identificationType') || 'CEDULA';
+                  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                    let val = e.target.value;
+                    const normType = idType.toLowerCase();
+                    if (normType.includes('cedula')) {
+                      val = val.replace(/\D/g, '').slice(0, 10);
+                    } else if (normType.includes('ruc')) {
+                      val = val.replace(/\D/g, '').slice(0, 13);
+                    } else if (normType.includes('pasaporte')) {
+                      val = val.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
+                    }
+                    field.onChange(val);
+                  };
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Nro. Identificación</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="0000000000"
+                          {...field}
+                          onChange={handleNumberChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
 

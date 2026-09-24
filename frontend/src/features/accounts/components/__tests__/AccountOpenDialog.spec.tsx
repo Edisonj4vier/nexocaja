@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { AccountOpenDialog } from '../AccountOpenDialog';
 
 vi.mock('@/features/accounts/hooks/useFinancialProducts', () => ({
@@ -23,10 +24,12 @@ vi.mock('@/features/accounts/hooks/useFinancialProducts', () => ({
 describe('AccountOpenDialog component', () => {
   it('renders step 1 safely without throwing products.find error', () => {
     render(
-      <AccountOpenDialog
-        open={true}
-        onOpenChange={vi.fn()}
-      />
+      <MemoryRouter>
+        <AccountOpenDialog
+          open={true}
+          onOpenChange={vi.fn()}
+        />
+      </MemoryRouter>
     );
 
     expect(screen.getByText(/Apertura de Cuenta Financiera/i)).toBeInTheDocument();
@@ -44,11 +47,13 @@ describe('AccountOpenDialog component', () => {
     } as any;
 
     render(
-      <AccountOpenDialog
-        open={true}
-        onOpenChange={vi.fn()}
-        preselectedClient={mockClient}
-      />
+      <MemoryRouter>
+        <AccountOpenDialog
+          open={true}
+          onOpenChange={vi.fn()}
+          preselectedClient={mockClient}
+        />
+      </MemoryRouter>
     );
 
     expect(screen.getByText('Pérez Edison')).toBeInTheDocument();

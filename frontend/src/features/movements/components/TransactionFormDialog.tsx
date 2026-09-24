@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Account } from '@/types';
+import type { Account, TransactionVoucher } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -11,12 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowDownToLine, ArrowUpFromLine, Search, Loader2, AlertCircle } from 'lucide-react';
 import api from '@/lib/axios';
+import { TransactionVoucherModal } from './TransactionVoucherModal';
 
 interface TransactionFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   type: 'deposit' | 'withdrawal';
-  onSubmit: (data: { accountId: string; amount: number; observations?: string }) => Promise<boolean>;
+  onSubmit: (data: { accountId: string; amount: number; observations?: string }) => Promise<any>;
   isLoading: boolean;
   initialAccountNumber?: string;
 }
@@ -35,6 +36,9 @@ export function TransactionFormDialog({
   const [observations, setObservations] = useState('');
   const [searchError, setSearchError] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [emittedVoucher, setEmittedVoucher] = useState<TransactionVoucher | null>(null);
+  const [isVoucherOpen, setIsVoucherOpen] = useState(false);
+
 
   const searchAccount = async (targetAccountNum?: string) => {
     const term = (targetAccountNum !== undefined ? targetAccountNum : accountSearch).trim();
@@ -108,9 +112,13 @@ export function TransactionFormDialog({
       payload.observations = observations.trim();
     }
 
-    const success = await onSubmit(payload);
-    if (success) {
+    const result = await onSubmit(payload);
+    if (result) {
       onOpenChange(false);
+      if (typeof result === 'object' && result.documentNumber) {
+        setEmittedVoucher(result as TransactionVoucher);
+        setIsVoucherOpen(true);
+      }
     }
   };
 
@@ -119,6 +127,7 @@ export function TransactionFormDialog({
   const isInsufficient = !isDeposit && foundAccount && !isNaN(parsedAmount) && parsedAmount > Number(foundAccount.balance);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[460px]">
         <DialogHeader>
@@ -269,5 +278,16 @@ export function TransactionFormDialog({
         </form>
       </DialogContent>
     </Dialog>
+
+    {emittedVoucher && (
+      <TransactionVoucherModal
+        open={isVoucherOpen}
+        onOpenChange={setIsVoucherOpen}
+        voucher={emittedVoucher}
+        onNewTransaction={() => onOpenChange(true)}
+      />
+    )}
+    </>
   );
 }
+

@@ -19,6 +19,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/stores/toast.store';
 import { useFinancialProducts } from '../hooks/useFinancialProducts';
 import type { Client } from '@/types';
 import api from '@/lib/axios';
@@ -43,7 +45,7 @@ const beneficiarySchema = z.object({
 const accountSchema = z.object({
   clientId: z.string().min(1, 'Debe seleccionar un socio'),
   productId: z.string().min(1, 'Debe seleccionar un producto financiero'),
-  openingAmount: z.number().min(0).default(0),
+  openingAmount: z.coerce.number().min(0, 'El monto debe ser mayor o igual a 0').default(0),
   agency: z.string().default('Matriz'),
   beneficiaries: z.array(beneficiarySchema).default([]),
 });
@@ -63,7 +65,9 @@ export function AccountOpenDialog({
   preselectedClient,
   onSuccess,
 }: AccountOpenDialogProps) {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { products } = useFinancialProducts();
   const productsList = Array.isArray(products) ? products : [];
 
@@ -188,16 +192,35 @@ export function AccountOpenDialog({
   };
 
   const onSubmit = async (values: AccountFormValues) => {
+    if (step < 3) {
+      handleNext();
+      return;
+    }
     try {
+      setIsSubmitting(true);
       const payload = {
         ...values,
         beneficiaries,
       };
-      await api.post('/accounts', payload);
+      const response = await api.post('/accounts', payload);
+      const newAccount = response.data;
       onOpenChange(false);
       onSuccess?.();
+      const clientName = selectedClient ? `${selectedClient.firstName} ${selectedClient.lastName}` : 'el socio';
+      toast.success(
+        '¡Cuenta Aperturada Exitosamente!',
+        `Se ha asignado la cuenta N° ${newAccount.accountNumber || ''} para ${clientName}. Saldo inicial: $${Number(values.openingAmount || 0).toFixed(2)}.`,
+        {
+          action: {
+            label: 'Ver Cuenta',
+            onClick: () => navigate(`/app/accounts/${newAccount.id}`),
+          },
+        }
+      );
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Error al aperturar la cuenta');
+      toast.error('Error al aperturar cuenta', err.response?.data?.message || 'Error en el servidor');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -245,7 +268,22 @@ export function AccountOpenDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-2">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (step < 3) {
+                  handleNext();
+                }
+              }
+            }}
+            className="space-y-6 pt-2"
+          >
             {/* PASO 1: SELECCIONAR SOCIO */}
             {step === 1 && (
               <div className="space-y-4">
@@ -396,7 +434,24 @@ export function AccountOpenDialog({
                       <FormItem>
                         <FormLabel className="text-xs font-semibold">Monto de Depósito Inicial (USD) *</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" {...field} className="h-9 font-bold text-emerald-600" />
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="Ej. 10.00"
+                            {...field}
+                            value={field.value ?? ''}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
+                                val = val.replace(/^0+/, '') || '0';
+                                e.target.value = val;
+                              }
+                              field.onChange(val === '' ? '' : Number(val));
+                            }}
+                            className="h-9 font-bold text-emerald-600"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -529,11 +584,15 @@ export function AccountOpenDialog({
                   </Button>
                 ) : (
                   <Button
-                    type="submit"
+                    type="button"
                     size="sm"
+                    disabled={isSubmitting}
+                    onClick={() => {
+                      form.handleSubmit(onSubmit)();
+                    }}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs font-semibold shadow-xs"
                   >
-                    Aperturar Cuenta
+                    {isSubmitting ? 'Aperturando...' : 'Confirmar y Aperturar Cuenta'}
                   </Button>
                 )}
               </div>

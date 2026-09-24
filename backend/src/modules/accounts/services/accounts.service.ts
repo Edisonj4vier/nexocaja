@@ -269,4 +269,157 @@ export class AccountsService {
       );
     }
   }
+
+  async getAccountStatement(accountId: string, startDate?: string, endDate?: string) {
+    const account = await this.prisma.account.findUnique({
+      where: { id: accountId },
+      include: {
+        client: true,
+        product: true,
+      },
+    });
+
+    if (!account) {
+      throw new NotFoundException('Cuenta no encontrada.');
+    }
+
+    const start = startDate ? new Date(`${startDate}T00:00:00.000Z`) : null;
+    const end = endDate ? new Date(`${endDate}T23:59:59.999Z`) : null;
+
+    const openingAmount = Number(account.openingAmount || 0);
+    let saldoAnterior = openingAmount;
+
+    if (start) {
+      const priorMovements = await this.prisma.movement.findMany({
+        where: {
+          accountId: account.id,
+          createdAt: { lt: start },
+        },
+        select: {
+          type: true,
+          amount: true,
+        },
+      });
+
+      const priorNet = priorMovements.reduce((acc, m) => {
+        const amt = Number(m.amount);
+        return m.type === 'DEPOSIT' ? acc + amt : acc - amt;
+      }, 0);
+
+      saldoAnterior = openingAmount + priorNet;
+    }
+
+    const movements = await this.prisma.movement.findMany({
+      where: {
+        accountId: account.id,
+        ...((start || end) && {
+          createdAt: {
+            ...(start && { gte: start }),
+            ...(end && { lte: end }),
+          },
+        }),
+      },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        user: {
+          select: { firstName: true, lastName: true },
+        },
+      },
+    });
+
+    let currentRunningBalance = saldoAnterior;
+    let totalCreditos = 0;
+    let totalDebitos = 0;
+
+    const statementMovements = movements.map((m) => {
+      const amount = Number(m.amount);
+      const isDeposit = m.type === 'DEPOSIT';
+      const debit = isDeposit ? 0 : amount;
+      const credit = isDeposit ? amount : 0;
+
+      if (isDeposit) {
+        currentRunningBalance += amount;
+        totalCreditos += amount;
+      } else {
+        currentRunningBalance -= amount;
+        totalDebitos += amount;
+      }
+
+      const created = new Date(m.createdAt);
+      const day = String(created.getUTCDate()).padStart(2, '0');
+      const month = String(created.getUTCMonth() + 1).padStart(2, '0');
+      const year = created.getUTCFullYear();
+      const dateStr = `${day}-${month}-${year}`;
+
+      const hours = String(created.getUTCHours()).padStart(2, '0');
+      const minutes = String(created.getUTCMinutes()).padStart(2, '0');
+      const seconds = String(created.getUTCSeconds()).padStart(2, '0');
+      const timeStr = `${hours}:${minutes}:${seconds}`;
+
+      const docNumber = `VCH-${year}-${m.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+      const cashierName = m.user ? `${m.user.firstName} ${m.user.lastName}` : 'Cajero';
+
+      return {
+        id: m.id,
+        date: dateStr,
+        time: timeStr,
+        createdAt: m.createdAt,
+        type: m.type,
+        transaction: isDeposit ? 'DEPÓSITO EN EFECTIVO' : 'RETIRO CON LIBRETA',
+        detail: m.observations || `${isDeposit ? 'Depósito en ventanilla' : 'Retiro en ventanilla'} (${cashierName})`,
+        document: docNumber,
+        debit,
+        credit,
+        amount,
+        balance: currentRunningBalance,
+        cashierName,
+      };
+    });
+
+    const formattedStartDate = startDate || (movements.length > 0 ? statementMovements[0].date : new Date(account.openedAt).toISOString().split('T')[0]);
+    const formattedEndDate = endDate || new Date().toISOString().split('T')[0];
+
+    return {
+      account: {
+        id: account.id,
+        accountNumber: account.accountNumber,
+        productName: account.product?.name || 'Ahorros Ordinaria',
+        productType: account.product?.type || 'SAVINGS',
+        agency: account.agency || 'Matriz',
+        status: account.status,
+        interestRate: Number(account.interestRate || account.product?.interestRate || 0),
+        openedAt: account.openedAt,
+      },
+      client: {
+        id: account.client.id,
+        fullName: `${account.client.lastName} ${account.client.firstName}`,
+        firstName: account.client.firstName,
+        lastName: account.client.lastName,
+        identificationNumber: account.client.identificationNumber,
+        phone: account.client.phone || account.client.secondaryPhone || 'S/N',
+        address: account.client.address || (account.client.city ? `${account.client.city}, ${account.client.province || ''}` : 'Quito, Ecuador'),
+        city: account.client.city,
+        province: account.client.province,
+        memberCode: account.client.memberCode || 'SOC-000000',
+      },
+      period: {
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+      },
+      conciliation: {
+        saldoAnterior,
+        totalCreditos,
+        totalDebitos,
+        saldoActual: currentRunningBalance,
+        saldoPromedio: (saldoAnterior + currentRunningBalance) / 2,
+      },
+      movements: statementMovements,
+    };
+  }
+
+  async exportStatementPdf(accountId: string, startDate?: string, endDate?: string) {
+    const statement = await this.getAccountStatement(accountId, startDate, endDate);
+    return this.exportService.generateCooperativeStatementPdf(statement);
+  }
 }
+
