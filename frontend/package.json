@@ -36,7 +36,7 @@
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
     "lucide-react": "^1.27.0",
-    "react-hook-form": "^7.81.0",
+    "react-hook-form": "^7.85.0",
     "react-router-dom": "^7.18.1",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.3",
