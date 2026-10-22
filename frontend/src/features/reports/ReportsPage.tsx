@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useReports } from './hooks/useReports';
 import { formatEcuadorDateYMD } from '@/utils/date';
+import { DateFilterInput } from '@/components/shared/DateFilterInput';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -23,6 +23,7 @@ import {
   Landmark,
   Loader2,
   Calendar,
+  RotateCcw,
 } from 'lucide-react';
 
 type ReportType = 'movements' | 'clients' | 'accounts' | 'cash-registers';
@@ -211,11 +212,14 @@ export default function ReportsPage() {
                 Este Mes
               </Button>
               <Button
-                variant="ghost"
+                variant={startDate || endDate ? 'outline' : 'ghost'}
                 size="sm"
                 onClick={() => applyPreset('clear')}
+                className="gap-1 text-xs text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-100"
+                title="Restablecer fechas"
               >
-                Limpiar
+                <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
+                <span>Restablecer</span>
               </Button>
             </div>
           </CardTitle>
@@ -227,26 +231,24 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {/* Start Date */}
             <div className="space-y-1.5">
-              <Label className="text-xs text-zinc-500">Fecha Inicio</Label>
-              <div className="relative">
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
+              <Label className="text-xs text-zinc-500">Fecha Inicio (dd/mm/aaaa)</Label>
+              <DateFilterInput
+                value={startDate}
+                onChange={setStartDate}
+                className="w-full [&>input]:w-full"
+                aria-label="Fecha Inicio"
+              />
             </div>
 
             {/* End Date */}
             <div className="space-y-1.5">
-              <Label className="text-xs text-zinc-500">Fecha Fin</Label>
-              <div className="relative">
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
+              <Label className="text-xs text-zinc-500">Fecha Fin (dd/mm/aaaa)</Label>
+              <DateFilterInput
+                value={endDate}
+                onChange={setEndDate}
+                className="w-full [&>input]:w-full"
+                aria-label="Fecha Fin"
+              />
             </div>
 
             {/* Dynamic filter based on report */}

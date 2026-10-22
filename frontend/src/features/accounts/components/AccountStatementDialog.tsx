@@ -7,7 +7,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   Download,
@@ -23,6 +22,7 @@ import api from '@/lib/axios';
 import { downloadFile } from '@/lib/utils';
 import { TransactionVoucherModal } from '@/features/movements/components/TransactionVoucherModal';
 import { formatEcuadorDateYMD } from '@/utils/date';
+import { DateFilterInput } from '@/components/shared/DateFilterInput';
 
 interface AccountStatementDialogProps {
   open: boolean;
@@ -220,18 +220,21 @@ export const AccountStatementDialog: React.FC<AccountStatementDialogProps> = ({
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
                 Rango:
               </span>
-              <Input
-                type="date"
+              <DateFilterInput
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="h-8 w-36 text-xs bg-white dark:bg-zinc-900"
+                onChange={setStartDate}
+                placeholder="dd/mm/aaaa"
+                className="[&>input]:h-8 [&>input]:w-32"
+                aria-label="Fecha Desde"
               />
               <span className="text-slate-400">al</span>
-              <Input
-                type="date"
+              <DateFilterInput
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="h-8 w-36 text-xs bg-white dark:bg-zinc-900"
+                onChange={setEndDate}
+                placeholder="dd/mm/aaaa"
+                align="right"
+                className="[&>input]:h-8 [&>input]:w-32"
+                aria-label="Fecha Hasta"
               />
               <Button
                 size="sm"
@@ -270,9 +273,11 @@ export const AccountStatementDialog: React.FC<AccountStatementDialogProps> = ({
               <button
                 type="button"
                 onClick={() => handlePreset('all')}
-                className="px-2 py-1 rounded hover:bg-white dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 font-medium text-[11px]"
+                className="px-2 py-1 rounded hover:bg-white dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 font-medium text-[11px] flex items-center gap-1"
+                title="Limpiar y ver todo el histórico"
               >
-                Todo
+                <RotateCcw className="w-3 h-3 text-slate-400" />
+                <span>Restablecer</span>
               </button>
             </div>
           </div>

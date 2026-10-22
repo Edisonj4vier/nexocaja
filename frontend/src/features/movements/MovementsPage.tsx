@@ -287,6 +287,7 @@ export default function MovementsPage() {
           onExportExcel={() => handleExport('excel')}
           onExportPdf={() => handleExport('pdf')}
           isExporting={isLoading}
+          onReset={() => setFilterType('ALL')}
         />
       </div>
 
