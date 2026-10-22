@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useReports } from './hooks/useReports';
+import { formatEcuadorDateYMD } from '@/utils/date';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,18 +47,18 @@ export default function ReportsPage() {
   const applyPreset = (preset: 'today' | '7days' | 'month' | 'clear') => {
     const now = new Date();
     if (preset === 'today') {
-      const todayStr = now.toISOString().slice(0, 10);
+      const todayStr = formatEcuadorDateYMD(now);
       setStartDate(todayStr);
       setEndDate(todayStr);
     } else if (preset === '7days') {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(now.getDate() - 7);
-      setStartDate(sevenDaysAgo.toISOString().slice(0, 10));
-      setEndDate(now.toISOString().slice(0, 10));
+      setStartDate(formatEcuadorDateYMD(sevenDaysAgo));
+      setEndDate(formatEcuadorDateYMD(now));
     } else if (preset === 'month') {
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      setStartDate(firstDay.toISOString().slice(0, 10));
-      setEndDate(now.toISOString().slice(0, 10));
+      setStartDate(formatEcuadorDateYMD(firstDay));
+      setEndDate(formatEcuadorDateYMD(now));
     } else {
       setStartDate('');
       setEndDate('');

@@ -35,7 +35,8 @@ export default function ModulesHubPage() {
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      const formatted = new Intl.DateTimeFormat('es-ES', {
+      const formatted = new Intl.DateTimeFormat('es-EC', {
+        timeZone: 'America/Guayaquil',
         weekday: 'long',
         day: 'numeric',
         month: 'short',

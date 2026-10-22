@@ -8,6 +8,7 @@ import { ExportService } from '../../export/export.service';
 import { CreateMovementDto } from '../dto/create-movement.dto';
 import { QueryMovementDto } from '../dto/query-movement.dto';
 import { Prisma } from '@prisma/client';
+import { startOfEcuadorDay, endOfEcuadorDay } from '../../../common/utils/date.util';
 
 @Injectable()
 export class MovementsService {
@@ -126,8 +127,8 @@ export class MovementsService {
       }),
       ...((startDate || endDate) && {
         createdAt: {
-          ...(startDate && { gte: new Date(`${startDate}T00:00:00.000Z`) }),
-          ...(endDate && { lte: new Date(`${endDate}T23:59:59.999Z`) }),
+          ...(startDate && { gte: startOfEcuadorDay(startDate) }),
+          ...(endDate && { lte: endOfEcuadorDay(endDate) }),
         },
       }),
     };
@@ -186,8 +187,8 @@ export class MovementsService {
       }),
       ...((startDate || endDate) && {
         createdAt: {
-          ...(startDate && { gte: new Date(`${startDate}T00:00:00.000Z`) }),
-          ...(endDate && { lte: new Date(`${endDate}T23:59:59.999Z`) }),
+          ...(startDate && { gte: startOfEcuadorDay(startDate) }),
+          ...(endDate && { lte: endOfEcuadorDay(endDate) }),
         },
       }),
     };
@@ -204,7 +205,7 @@ export class MovementsService {
     });
 
     const data = movements.map((m) => ({
-      date: m.createdAt.toLocaleString(),
+      date: m.createdAt.toLocaleString('es-EC', { timeZone: 'America/Guayaquil' }),
       type: m.type === 'DEPOSIT' ? 'Depósito' : 'Retiro',
       accountNumber: m.account.accountNumber,
       client: `${m.account.client.lastName} ${m.account.client.firstName}`,

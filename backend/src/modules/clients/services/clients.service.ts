@@ -11,6 +11,7 @@ import { UpdateClientDto } from '../dto/update-client.dto';
 import { QueryClientDto } from '../dto/query-client.dto';
 import { Prisma, PersonType, ClientStatus } from '@prisma/client';
 import { validateIdentification } from '../../../common/validators/ecuadorian-id.validator';
+import { startOfEcuadorDay, endOfEcuadorDay } from '../../../common/utils/date.util';
 
 @Injectable()
 export class ClientsService {
@@ -117,8 +118,8 @@ export class ClientsService {
       }),
       ...((startDate || endDate) && {
         createdAt: {
-          ...(startDate && { gte: new Date(`${startDate}T00:00:00.000Z`) }),
-          ...(endDate && { lte: new Date(`${endDate}T23:59:59.999Z`) }),
+          ...(startDate && { gte: startOfEcuadorDay(startDate) }),
+          ...(endDate && { lte: endOfEcuadorDay(endDate) }),
         },
       }),
     };
@@ -285,8 +286,8 @@ export class ClientsService {
       }),
       ...((startDate || endDate) && {
         createdAt: {
-          ...(startDate && { gte: new Date(`${startDate}T00:00:00.000Z`) }),
-          ...(endDate && { lte: new Date(`${endDate}T23:59:59.999Z`) }),
+          ...(startDate && { gte: startOfEcuadorDay(startDate) }),
+          ...(endDate && { lte: endOfEcuadorDay(endDate) }),
         },
       }),
     };
@@ -315,7 +316,7 @@ export class ClientsService {
       phone: c.phone || 'N/A',
       email: c.email || 'N/A',
       status: c.status,
-      createdAt: c.createdAt.toISOString().split('T')[0],
+      createdAt: c.createdAt.toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil' }),
     }));
 
     if (format === 'excel') {

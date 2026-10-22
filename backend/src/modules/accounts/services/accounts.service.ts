@@ -4,6 +4,7 @@ import { CreateAccountDto } from '../dto/create-account.dto';
 import { QueryAccountDto } from '../dto/query-account.dto';
 import { ExportService } from '../../export/export.service';
 import { Prisma, AccountStatus } from '@prisma/client';
+import { startOfEcuadorDay, endOfEcuadorDay, formatEcuadorDateYMD } from '../../../common/utils/date.util';
 
 @Injectable()
 export class AccountsService {
@@ -114,8 +115,8 @@ export class AccountsService {
       }),
       ...((startDate || endDate) && {
         createdAt: {
-          ...(startDate && { gte: new Date(`${startDate}T00:00:00.000Z`) }),
-          ...(endDate && { lte: new Date(`${endDate}T23:59:59.999Z`) }),
+          ...(startDate && { gte: startOfEcuadorDay(startDate) }),
+          ...(endDate && { lte: endOfEcuadorDay(endDate) }),
         },
       }),
     };
@@ -224,8 +225,8 @@ export class AccountsService {
       }),
       ...((startDate || endDate) && {
         createdAt: {
-          ...(startDate && { gte: new Date(`${startDate}T00:00:00.000Z`) }),
-          ...(endDate && { lte: new Date(`${endDate}T23:59:59.999Z`) }),
+          ...(startDate && { gte: startOfEcuadorDay(startDate) }),
+          ...(endDate && { lte: endOfEcuadorDay(endDate) }),
         },
       }),
     };
@@ -256,7 +257,7 @@ export class AccountsService {
       clientDni: a.client.identificationNumber,
       balance: `$${Number(a.balance).toFixed(2)}`,
       status: a.status,
-      openedAt: a.openedAt.toISOString().split('T')[0],
+      openedAt: formatEcuadorDateYMD(a.openedAt),
     }));
 
     if (format === 'excel') {
@@ -283,8 +284,8 @@ export class AccountsService {
       throw new NotFoundException('Cuenta no encontrada.');
     }
 
-    const start = startDate ? new Date(`${startDate}T00:00:00.000Z`) : null;
-    const end = endDate ? new Date(`${endDate}T23:59:59.999Z`) : null;
+    const start = startDate ? startOfEcuadorDay(startDate) : null;
+    const end = endDate ? endOfEcuadorDay(endDate) : null;
 
     const openingAmount = Number(account.openingAmount || 0);
     let saldoAnterior = openingAmount;
@@ -346,15 +347,26 @@ export class AccountsService {
       }
 
       const created = new Date(m.createdAt);
-      const day = String(created.getUTCDate()).padStart(2, '0');
-      const month = String(created.getUTCMonth() + 1).padStart(2, '0');
-      const year = created.getUTCFullYear();
-      const dateStr = `${day}-${month}-${year}`;
+      const dateParts = new Intl.DateTimeFormat('es-EC', {
+        timeZone: 'America/Guayaquil',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }).format(created);
+      const dateStr = dateParts.replace(/\//g, '-');
 
-      const hours = String(created.getUTCHours()).padStart(2, '0');
-      const minutes = String(created.getUTCMinutes()).padStart(2, '0');
-      const seconds = String(created.getUTCSeconds()).padStart(2, '0');
-      const timeStr = `${hours}:${minutes}:${seconds}`;
+      const timeStr = new Intl.DateTimeFormat('es-EC', {
+        timeZone: 'America/Guayaquil',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }).format(created);
+
+      const year = new Intl.DateTimeFormat('es-EC', {
+        timeZone: 'America/Guayaquil',
+        year: 'numeric',
+      }).format(created);
 
       const docNumber = `VCH-${year}-${m.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
       const cashierName = m.user ? `${m.user.firstName} ${m.user.lastName}` : 'Cajero';
@@ -376,8 +388,11 @@ export class AccountsService {
       };
     });
 
-    const formattedStartDate = startDate || (movements.length > 0 ? statementMovements[0].date : new Date(account.openedAt).toISOString().split('T')[0]);
-    const formattedEndDate = endDate || new Date().toISOString().split('T')[0];
+    const formatDateYMD = (d: Date) =>
+      new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(d);
+
+    const formattedStartDate = startDate || (movements.length > 0 ? statementMovements[0].date : formatDateYMD(new Date(account.openedAt)));
+    const formattedEndDate = endDate || formatDateYMD(new Date());
 
     return {
       account: {

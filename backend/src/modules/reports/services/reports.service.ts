@@ -4,6 +4,7 @@ import { QueryReportDto, ReportFormat } from '../dto/query-report.dto';
 import type { Response } from 'express';
 import * as ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
+import { startOfEcuadorDay, endOfEcuadorDay } from '../../../common/utils/date.util';
 
 @Injectable()
 export class ReportsService {
@@ -20,12 +21,10 @@ export class ReportsService {
     if (query.startDate || query.endDate) {
       where.createdAt = {};
       if (query.startDate && !isNaN(new Date(query.startDate).getTime())) {
-        where.createdAt.gte = new Date(query.startDate);
+        where.createdAt.gte = startOfEcuadorDay(query.startDate);
       }
       if (query.endDate && !isNaN(new Date(query.endDate).getTime())) {
-        const end = new Date(query.endDate);
-        end.setHours(23, 59, 59, 999);
-        where.createdAt.lte = end;
+        where.createdAt.lte = endOfEcuadorDay(query.endDate);
       }
       if (Object.keys(where.createdAt).length === 0) {
         delete where.createdAt;
@@ -80,12 +79,10 @@ export class ReportsService {
     if (query.startDate || query.endDate) {
       where.openedAt = {};
       if (query.startDate && !isNaN(new Date(query.startDate).getTime())) {
-        where.openedAt.gte = new Date(query.startDate);
+        where.openedAt.gte = startOfEcuadorDay(query.startDate);
       }
       if (query.endDate && !isNaN(new Date(query.endDate).getTime())) {
-        const end = new Date(query.endDate);
-        end.setHours(23, 59, 59, 999);
-        where.openedAt.lte = end;
+        where.openedAt.lte = endOfEcuadorDay(query.endDate);
       }
       if (Object.keys(where.openedAt).length === 0) {
         delete where.openedAt;
@@ -135,12 +132,10 @@ export class ReportsService {
     if (query.startDate || query.endDate) {
       where.createdAt = {};
       if (query.startDate && !isNaN(new Date(query.startDate).getTime())) {
-        where.createdAt.gte = new Date(query.startDate);
+        where.createdAt.gte = startOfEcuadorDay(query.startDate);
       }
       if (query.endDate && !isNaN(new Date(query.endDate).getTime())) {
-        const end = new Date(query.endDate);
-        end.setHours(23, 59, 59, 999);
-        where.createdAt.lte = end;
+        where.createdAt.lte = endOfEcuadorDay(query.endDate);
       }
       if (Object.keys(where.createdAt).length === 0) {
         delete where.createdAt;
@@ -211,12 +206,10 @@ export class ReportsService {
     if (query.startDate || query.endDate) {
       where.openedAt = {};
       if (query.startDate && !isNaN(new Date(query.startDate).getTime())) {
-        where.openedAt.gte = new Date(query.startDate);
+        where.openedAt.gte = startOfEcuadorDay(query.startDate);
       }
       if (query.endDate && !isNaN(new Date(query.endDate).getTime())) {
-        const end = new Date(query.endDate);
-        end.setHours(23, 59, 59, 999);
-        where.openedAt.lte = end;
+        where.openedAt.lte = endOfEcuadorDay(query.endDate);
       }
       if (Object.keys(where.openedAt).length === 0) {
         delete where.openedAt;
@@ -372,7 +365,7 @@ export class ReportsService {
         m.clientName,
         m.cashier,
         m.observations,
-        new Date(m.createdAt).toLocaleString('es-EC'),
+        new Date(m.createdAt).toLocaleString('es-EC', { timeZone: 'America/Guayaquil' }),
       ]);
     });
 
@@ -643,7 +636,7 @@ export class ReportsService {
     doc.fontSize(12).font('Helvetica').fillColor('#475569');
     doc.text(title, 40, 60);
     doc.fontSize(8).fillColor('#94A3B8');
-    doc.text(`Generado el: ${new Date().toLocaleString('es-EC')}`, 40, 76);
+    doc.text(`Generado el: ${new Date().toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })}`, 40, 76);
     doc.moveTo(40, 90).lineTo(555, 90).stroke('#CBD5E1');
     doc.fillColor('#0F172A');
   }

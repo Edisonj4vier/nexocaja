@@ -197,7 +197,7 @@ export default function AccountDetailPage() {
             <span>•</span>
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />
-              Apertura: {new Date(account.openedAt).toLocaleDateString('es-ES')}
+              Apertura: {new Date(account.openedAt).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil' })}
             </span>
           </div>
         </div>
@@ -279,7 +279,7 @@ export default function AccountDetailPage() {
                 {account.movements.map((m: any) => (
                   <tr key={m.id} className="hover:bg-slate-50/50">
                     <td className="py-3 px-4 text-slate-500">
-                      {new Date(m.createdAt).toLocaleDateString('es-ES')} {new Date(m.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(m.createdAt).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil' })} {new Date(m.createdAt).toLocaleTimeString('es-EC', { timeZone: 'America/Guayaquil', hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="py-3 px-4">
                       <span

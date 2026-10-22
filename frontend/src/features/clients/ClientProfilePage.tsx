@@ -177,7 +177,7 @@ export default function ClientProfilePage() {
                 <span>•</span>
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Afiliado: {client.affiliationDate ? new Date(client.affiliationDate).toLocaleDateString('es-ES') : 'Reciente'}</span>
+                  <span>Afiliado: {client.affiliationDate ? new Date(client.affiliationDate).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil' }) : 'Reciente'}</span>
                 </span>
               </div>
             </div>
@@ -433,7 +433,7 @@ export default function ClientProfilePage() {
                 {client.recentMovements.map((m: any) => (
                   <tr key={m.id} className="hover:bg-slate-50/50">
                     <td className="py-3 px-4 text-slate-500">
-                      {new Date(m.createdAt).toLocaleDateString('es-ES')} {new Date(m.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(m.createdAt).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil' })} {new Date(m.createdAt).toLocaleTimeString('es-EC', { timeZone: 'America/Guayaquil', hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="py-3 px-4 font-mono font-medium text-slate-700 dark:text-zinc-300">
                       {m.account?.accountNumber || 'Cuenta'}
@@ -508,7 +508,7 @@ export default function ClientProfilePage() {
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50">
                 <span className="text-slate-400">Fecha de Nacimiento</span>
-                <strong className="text-slate-700">{client.birthDate ? new Date(client.birthDate).toLocaleDateString('es-ES') : 'No especificada'}</strong>
+                <strong className="text-slate-700">{client.birthDate ? new Date(client.birthDate).toLocaleDateString('es-EC', { timeZone: 'UTC' }) : 'No especificada'}</strong>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50">
                 <span className="text-slate-400">Género / Estado Civil</span>
@@ -702,10 +702,10 @@ export default function ClientProfilePage() {
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
               <span className="text-slate-400 block">Fechas Clave de Auditoría</span>
               <p className="text-slate-700">
-                <strong>Registro Inicial:</strong> {new Date(client.createdAt).toLocaleString('es-ES')}
+                <strong>Registro Inicial:</strong> {new Date(client.createdAt).toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })}
               </p>
               <p className="text-slate-700">
-                <strong>Última Modificación:</strong> {new Date(client.updatedAt).toLocaleString('es-ES')}
+                <strong>Última Modificación:</strong> {new Date(client.updatedAt).toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })}
               </p>
             </div>
           </div>

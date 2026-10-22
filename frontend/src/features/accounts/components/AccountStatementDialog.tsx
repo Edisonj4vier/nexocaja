@@ -22,6 +22,7 @@ import {
 import api from '@/lib/axios';
 import { downloadFile } from '@/lib/utils';
 import { TransactionVoucherModal } from '@/features/movements/components/TransactionVoucherModal';
+import { formatEcuadorDateYMD } from '@/utils/date';
 
 interface AccountStatementDialogProps {
   open: boolean;
@@ -70,8 +71,8 @@ export const AccountStatementDialog: React.FC<AccountStatementDialogProps> = ({
       // Default to current month
       const now = new Date();
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      const startStr = firstDay.toISOString().split('T')[0];
-      const endStr = now.toISOString().split('T')[0];
+      const startStr = formatEcuadorDateYMD(firstDay);
+      const endStr = formatEcuadorDateYMD(now);
       setStartDate(startStr);
       setEndDate(endStr);
       fetchStatement(startStr, endStr);
@@ -85,19 +86,19 @@ export const AccountStatementDialog: React.FC<AccountStatementDialogProps> = ({
   const handlePreset = (type: 'thisMonth' | 'prevMonth' | 'quarter' | 'all') => {
     const now = new Date();
     let start = '';
-    let end = now.toISOString().split('T')[0];
+    let end = formatEcuadorDateYMD(now);
 
     if (type === 'thisMonth') {
-      start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      start = formatEcuadorDateYMD(new Date(now.getFullYear(), now.getMonth(), 1));
     } else if (type === 'prevMonth') {
       const firstDayPrev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastDayPrev = new Date(now.getFullYear(), now.getMonth(), 0);
-      start = firstDayPrev.toISOString().split('T')[0];
-      end = lastDayPrev.toISOString().split('T')[0];
+      start = formatEcuadorDateYMD(firstDayPrev);
+      end = formatEcuadorDateYMD(lastDayPrev);
     } else if (type === 'quarter') {
       const threeMonthsAgo = new Date();
       threeMonthsAgo.setMonth(now.getMonth() - 3);
-      start = threeMonthsAgo.toISOString().split('T')[0];
+      start = formatEcuadorDateYMD(threeMonthsAgo);
     } else if (type === 'all') {
       start = '';
       end = '';

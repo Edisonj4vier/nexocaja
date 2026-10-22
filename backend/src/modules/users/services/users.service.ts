@@ -10,6 +10,7 @@ import { UpdateUserDto } from '../dto/update-user.dto';
 import { QueryUserDto } from '../dto/query-user.dto';
 import * as bcrypt from 'bcrypt';
 import { Prisma, UserStatus } from '@prisma/client';
+import { startOfEcuadorDay, endOfEcuadorDay } from '../../../common/utils/date.util';
 
 @Injectable()
 export class UsersService {
@@ -61,8 +62,8 @@ export class UsersService {
       }),
       ...((startDate || endDate) && {
         createdAt: {
-          ...(startDate && { gte: new Date(`${startDate}T00:00:00.000Z`) }),
-          ...(endDate && { lte: new Date(`${endDate}T23:59:59.999Z`) }),
+          ...(startDate && { gte: startOfEcuadorDay(startDate) }),
+          ...(endDate && { lte: endOfEcuadorDay(endDate) }),
         },
       }),
     };
@@ -166,8 +167,8 @@ export class UsersService {
       }),
       ...((startDate || endDate) && {
         createdAt: {
-          ...(startDate && { gte: new Date(`${startDate}T00:00:00.000Z`) }),
-          ...(endDate && { lte: new Date(`${endDate}T23:59:59.999Z`) }),
+          ...(startDate && { gte: startOfEcuadorDay(startDate) }),
+          ...(endDate && { lte: endOfEcuadorDay(endDate) }),
         },
       }),
     };
@@ -183,7 +184,7 @@ export class UsersService {
       email: u.email,
       role: u.role.name,
       status: u.status,
-      createdAt: u.createdAt.toLocaleString(),
+      createdAt: u.createdAt.toLocaleString('es-EC', { timeZone: 'America/Guayaquil' }),
     }));
 
     const columns = [

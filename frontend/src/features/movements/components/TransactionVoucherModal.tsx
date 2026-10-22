@@ -38,12 +38,14 @@ export const TransactionVoucherModal: React.FC<TransactionVoucherModalProps> = (
   const operationTitle = isDeposit ? '¡Depósito exitoso!' : '¡Retiro exitoso!';
 
   const formattedDate = new Date(voucher.createdAt).toLocaleDateString('es-EC', {
+    timeZone: 'America/Guayaquil',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
 
   const formattedTime = new Date(voucher.createdAt).toLocaleTimeString('es-EC', {
+    timeZone: 'America/Guayaquil',
     hour: '2-digit',
     minute: '2-digit',
   });

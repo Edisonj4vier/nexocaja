@@ -408,6 +408,7 @@ export class ExportService {
       doc.text(`A: ${voucher.clientName}`, 20, 134, { align: 'center', width: width - 40 });
       doc.fillColor('#64748B').fontSize(7.5).font('Helvetica');
       const formattedDate = new Date(voucher.createdAt).toLocaleString('es-EC', {
+        timeZone: 'America/Guayaquil',
         dateStyle: 'long',
         timeStyle: 'short',
       });
@@ -466,7 +467,7 @@ export class ExportService {
     doc.fontSize(12).font('Helvetica').fillColor('#475569');
     doc.text(title, 40, 60);
     doc.fontSize(8).fillColor('#94A3B8');
-    doc.text(`Generado el: ${new Date().toLocaleString('es-EC')}`, 40, 76);
+    doc.text(`Generado el: ${new Date().toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })}`, 40, 76);
     doc.moveTo(40, 90).lineTo(doc.page.width - 40, 90).stroke('#CBD5E1');
     doc.fillColor('#0F172A');
   }
